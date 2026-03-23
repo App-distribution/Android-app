@@ -31,7 +31,7 @@ class ProjectRepositoryImpl @Inject constructor(
         try {
             // workspaceId is not in scope for MVP — use a placeholder; server should return workspace builds
             // In a real app this would come from UserPreferences. For MVP use empty string.
-            val response = api.getProjects("")
+            val response = api.getProjects()
             if (response.isSuccessful) {
                 _projects.value = response.body() ?: emptyList()
             }

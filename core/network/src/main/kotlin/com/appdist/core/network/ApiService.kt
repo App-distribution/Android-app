@@ -20,8 +20,8 @@ interface ApiService {
     suspend fun logout(): Response<Unit>
 
     // Projects
-    @GET("api/v1/workspaces/{workspaceId}/projects")
-    suspend fun getProjects(@Path("workspaceId") workspaceId: String): Response<List<ProjectResponse>>
+    @GET("api/v1/projects")
+    suspend fun getProjects(): Response<List<ProjectResponse>>
 
     @GET("api/v1/projects/{id}")
     suspend fun getProject(@Path("id") id: String): Response<ProjectResponse>
