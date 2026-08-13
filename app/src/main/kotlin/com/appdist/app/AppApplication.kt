@@ -23,7 +23,13 @@ class AppApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         if (BuildConfig.DEBUG) Timber.plant(Timber.DebugTree())
-        appScope.launch { downloadRepository.reconcileStaleDownloads() }
+        appScope.launch {
+            try {
+                downloadRepository.reconcileStaleDownloads()
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to reconcile stale downloads")
+            }
+        }
     }
 
     override val workManagerConfiguration: Configuration
