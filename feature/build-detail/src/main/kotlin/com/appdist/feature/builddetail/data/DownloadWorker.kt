@@ -14,7 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.File
 
 /**
  * ВНИМАНИЕ: полное имя класса хранится в базе WorkManager. Перенос в другой
@@ -52,6 +51,8 @@ class DownloadWorker @AssistedInject constructor(
         val outputFile = DownloadPaths.apkFile(applicationContext, buildId)
             .also { it.parentFile?.mkdirs() }
 
+        val startedAtMs = System.currentTimeMillis()
+
         fun row(state: String, progress: Float, loaded: Long, path: String?, completedAt: Long?) =
             DownloadEntity(
                 buildId = buildId,
@@ -60,7 +61,7 @@ class DownloadWorker @AssistedInject constructor(
                 progress = progress,
                 bytesLoaded = loaded,
                 totalBytes = totalBytes,
-                startedAt = System.currentTimeMillis(),
+                startedAt = startedAtMs,
                 versionName = versionName,
                 versionCode = versionCode,
                 channel = channel,
