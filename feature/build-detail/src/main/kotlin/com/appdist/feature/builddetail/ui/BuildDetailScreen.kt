@@ -20,7 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.appdist.core.common.AppError
 import com.appdist.core.common.model.InstallStatus
 import com.appdist.core.ui.components.ErrorScreen
-import com.appdist.feature.builddetail.domain.DownloadState
+import com.appdist.core.downloads.DownloadState
 import com.appdist.core.ui.components.LoadingScreen
 import com.appdist.feature.builddetail.ui.components.BuildHeroSection
 import com.appdist.feature.builddetail.ui.components.ChangelogSection

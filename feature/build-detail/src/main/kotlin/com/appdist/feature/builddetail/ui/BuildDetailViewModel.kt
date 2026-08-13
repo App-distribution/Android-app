@@ -12,6 +12,7 @@ import com.appdist.core.common.Result
 import com.appdist.core.common.toAppError
 import com.appdist.core.common.model.BuildUi
 import com.appdist.core.common.model.InstallStatus
+import com.appdist.core.downloads.DownloadState
 import com.appdist.feature.builddetail.domain.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext

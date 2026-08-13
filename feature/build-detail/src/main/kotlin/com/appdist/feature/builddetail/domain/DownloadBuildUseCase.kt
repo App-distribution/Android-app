@@ -4,18 +4,11 @@ import androidx.work.*
 import com.appdist.core.common.AppError
 import com.appdist.core.common.Result
 import com.appdist.core.common.model.BuildUi
+import com.appdist.core.downloads.DownloadState
 import com.appdist.feature.builddetail.data.DownloadWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
-
-sealed interface DownloadState {
-    data object Idle : DownloadState
-    data class Downloading(val progress: Float, val bytesLoaded: Long) : DownloadState
-    data object Verifying : DownloadState
-    data class ReadyToInstall(val filePath: String) : DownloadState
-    data class Failed(val reason: AppError) : DownloadState
-}
 
 class DownloadBuildUseCase @Inject constructor(
     private val workManager: WorkManager,
