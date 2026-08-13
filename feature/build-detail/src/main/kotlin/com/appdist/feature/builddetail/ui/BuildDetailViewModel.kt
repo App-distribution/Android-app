@@ -6,12 +6,12 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.WorkManager
 import com.appdist.core.common.AppError
 import com.appdist.core.common.Result
 import com.appdist.core.common.toAppError
 import com.appdist.core.common.model.BuildUi
 import com.appdist.core.common.model.InstallStatus
+import com.appdist.core.downloads.DownloadRepository
 import com.appdist.core.downloads.DownloadState
 import com.appdist.feature.builddetail.domain.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -50,9 +50,9 @@ class BuildDetailViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val getBuildDetail: GetBuildDetailUseCase,
     private val getInstallStatus: GetInstallStatusUseCase,
-    private val downloadBuild: DownloadBuildUseCase,
-    private val reportInstall: ReportInstallUseCase,
-    private val workManager: WorkManager
+    private val startDownload: StartDownloadUseCase,
+    private val downloadRepository: DownloadRepository,
+    private val reportInstall: ReportInstallUseCase
 ) : ViewModel() {
 
     val buildId: String = checkNotNull(savedStateHandle["buildId"])
@@ -63,13 +63,45 @@ class BuildDetailViewModel @Inject constructor(
     private val _effects = Channel<BuildDetailEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
-    init { loadBuild() }
+    /**
+     * Установщик запускается автоматически только для загрузки, начатой в этой
+     * сессии экрана. Без флага восстановленное состояние ReadyToInstall
+     * открывало бы системный установщик при каждом заходе на экран.
+     */
+    private var autoInstallRequested = false
+
+    init {
+        loadBuild()
+        observeDownloadState()
+    }
 
     fun onAction(action: BuildDetailAction) = when (action) {
         BuildDetailAction.DownloadOrInstallClicked -> handleInstallAction()
         BuildDetailAction.CancelDownload -> cancelDownload()
         BuildDetailAction.CopyLinkClicked -> copyLink()
         BuildDetailAction.RetryClicked -> loadBuild()
+    }
+
+    /**
+     * Подписка живёт в init, поэтому переживает пересоздание ViewModel при
+     * возврате на экран: состояние идущей загрузки восстанавливается из
+     * WorkManager, а не начинается с Idle.
+     */
+    private fun observeDownloadState() {
+        viewModelScope.launch {
+            downloadRepository.observeDownload(buildId).collect { downloadState ->
+                _state.update { it.copy(downloadState = downloadState) }
+
+                if (downloadState is DownloadState.ReadyToInstall && autoInstallRequested) {
+                    autoInstallRequested = false
+                    launchInstaller(downloadState.filePath)
+                }
+                if (downloadState is DownloadState.Failed && autoInstallRequested) {
+                    autoInstallRequested = false
+                    _effects.send(BuildDetailEffect.ShowSnackbar("Ошибка загрузки"))
+                }
+            }
+        }
     }
 
     private fun loadBuild() {
@@ -110,25 +142,18 @@ class BuildDetailViewModel @Inject constructor(
             return
         }
 
-        startDownload(build)
+        enqueueDownload(build)
     }
 
-    private fun startDownload(build: BuildUi) {
+    private fun enqueueDownload(build: BuildUi) {
         viewModelScope.launch {
             val urlResult = getBuildDetail.getDownloadUrl(buildId)
             if (urlResult is Result.Error) {
                 _effects.send(BuildDetailEffect.ShowSnackbar("Не удалось получить ссылку на скачивание"))
                 return@launch
             }
-            val url = (urlResult as Result.Success).data
-
-            downloadBuild(build, url).collect { dlState ->
-                _state.update { it.copy(downloadState = dlState) }
-                if (dlState is DownloadState.ReadyToInstall) launchInstaller(dlState.filePath)
-                if (dlState is DownloadState.Failed) {
-                    _effects.send(BuildDetailEffect.ShowSnackbar("Ошибка загрузки"))
-                }
-            }
+            autoInstallRequested = true
+            startDownload(build, (urlResult as Result.Success).data)
         }
     }
 
@@ -145,8 +170,10 @@ class BuildDetailViewModel @Inject constructor(
     }
 
     private fun cancelDownload() {
-        workManager.cancelUniqueWork("download_$buildId")
-        _state.update { it.copy(downloadState = DownloadState.Idle) }
+        viewModelScope.launch {
+            autoInstallRequested = false
+            downloadRepository.cancel(buildId)
+        }
     }
 
     private fun copyLink() {
