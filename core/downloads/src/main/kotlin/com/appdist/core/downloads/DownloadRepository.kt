@@ -29,7 +29,7 @@ class DownloadRepository @Inject constructor(
      * ВНИМАНИЕ: формат имени не менять — по нему находятся работы,
      * поставленные в очередь предыдущими версиями приложения.
      */
-    fun uniqueWorkName(buildId: String): String = "download_$buildId"
+    fun uniqueWorkName(buildId: String): String = DownloadWorkKeys.uniqueWorkName(buildId)
 
     /**
      * Состояние загрузки конкретной сборки.

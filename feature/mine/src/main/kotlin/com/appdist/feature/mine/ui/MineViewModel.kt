@@ -10,8 +10,10 @@ import com.appdist.core.database.entity.InstallHistoryEntity
 import com.appdist.core.downloads.DownloadRepository
 import com.appdist.core.downloads.DownloadedApk
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class DownloadedApkUi(
@@ -53,15 +55,34 @@ class MineViewModel @Inject constructor(
             activeDownloads = downloads,
             downloaded = downloaded.map { it.toUi() }
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MineUiState())
+    }
+        .catch { e ->
+            // Трансформация теперь делает suspend-вызов в БД (getBuildById);
+            // сбой БД здесь не должен уходить необработанным из stateIn и
+            // ронять процесс — экран просто перестанет обновляться.
+            Timber.e(e, "Failed to combine Mine screen state")
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MineUiState())
 
     fun onAction(action: MineAction) {
         when (action) {
             is MineAction.DeleteDownload -> viewModelScope.launch {
-                downloadRepository.delete(action.buildId)
+                try {
+                    downloadRepository.delete(action.buildId)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to delete download %s", action.buildId)
+                }
             }
             MineAction.DeleteAllDownloads -> viewModelScope.launch {
-                downloadRepository.deleteAll()
+                try {
+                    downloadRepository.deleteAll()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to delete all downloads")
+                }
             }
         }
     }

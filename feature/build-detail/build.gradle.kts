@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.compose.material.icons)
     implementation(libs.okhttp)
     implementation(libs.retrofit)
+    implementation(libs.timber)
     testImplementation(libs.junit5.api)
     testRuntimeOnly(libs.junit5.engine)
     testImplementation(libs.mockk)

@@ -19,6 +19,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 
@@ -89,18 +90,27 @@ class BuildDetailViewModel @Inject constructor(
      */
     private fun observeDownloadState() {
         viewModelScope.launch {
-            downloadRepository.observeDownload(buildId).collect { downloadState ->
-                _state.update { it.copy(downloadState = downloadState) }
+            downloadRepository.observeDownload(buildId)
+                .catch { e ->
+                    // combine() из Room-flow и WorkManager-flow может упасть (диск
+                    // полон, база повреждена, сбой в БД самого WorkManager). Без
+                    // этого исключение ушло бы необработанным из viewModelScope и
+                    // уронило бы процесс на главном экране приложения.
+                    Timber.e(e, "Failed to observe download state for build %s", buildId)
+                    _state.update { it.copy(downloadState = DownloadState.Failed(e.toAppError())) }
+                }
+                .collect { downloadState ->
+                    _state.update { it.copy(downloadState = downloadState) }
 
-                if (downloadState is DownloadState.ReadyToInstall && autoInstallRequested) {
-                    autoInstallRequested = false
-                    launchInstaller(downloadState.filePath)
+                    if (downloadState is DownloadState.ReadyToInstall && autoInstallRequested) {
+                        autoInstallRequested = false
+                        launchInstaller(downloadState.filePath)
+                    }
+                    if (downloadState is DownloadState.Failed && autoInstallRequested) {
+                        autoInstallRequested = false
+                        _effects.send(BuildDetailEffect.ShowSnackbar("Ошибка загрузки"))
+                    }
                 }
-                if (downloadState is DownloadState.Failed && autoInstallRequested) {
-                    autoInstallRequested = false
-                    _effects.send(BuildDetailEffect.ShowSnackbar("Ошибка загрузки"))
-                }
-            }
         }
     }
 

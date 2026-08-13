@@ -6,6 +6,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import app.cash.turbine.test
+import com.appdist.core.common.AppError
 import com.appdist.core.database.dao.DownloadDao
 import com.appdist.core.database.entity.DownloadEntity
 import io.mockk.coEvery
@@ -123,6 +124,45 @@ class DownloadRepositoryTest {
     }
 
     @Test
+    fun `running work with verifying row maps to Verifying`() = runTest {
+        every { workManager.getWorkInfosForUniqueWorkFlow("download_b1") } returns
+            flowOf(listOf(workInfo(WorkInfo.State.RUNNING, Data.EMPTY)))
+        every { dao.observeByBuildId("b1") } returns flowOf(
+            entity("b1", DownloadWorkKeys.STATE_VERIFYING, localPath = null)
+        )
+
+        repository.observeDownload("b1").test {
+            assertEquals(DownloadState.Verifying, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `failed work with no ready file maps to Failed`() = runTest {
+        every { workManager.getWorkInfosForUniqueWorkFlow("download_b1") } returns
+            flowOf(listOf(
+                workInfo(
+                    WorkInfo.State.FAILED,
+                    Data.EMPTY,
+                    outputData = workDataOf(DownloadWorkKeys.KEY_ERROR to "HTTP 500")
+                )
+            ))
+        every { dao.observeByBuildId("b1") } returns flowOf(
+            entity("b1", DownloadWorkKeys.STATE_FAILED, localPath = null)
+        )
+
+        repository.observeDownload("b1").test {
+            val state = awaitItem()
+            assertTrue(state is DownloadState.Failed)
+            assertEquals(
+                AppError.Unknown("HTTP 500"),
+                (state as DownloadState.Failed).reason
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `unfinished work wins over finished one`() = runTest {
         every { workManager.getWorkInfosForUniqueWorkFlow("download_b1") } returns
             flowOf(listOf(
@@ -191,10 +231,11 @@ class DownloadRepositoryTest {
         coVerify { dao.markFailed("stuck") }
     }
 
-    private fun workInfo(state: WorkInfo.State, progress: Data) = WorkInfo(
+    private fun workInfo(state: WorkInfo.State, progress: Data, outputData: Data = Data.EMPTY) = WorkInfo(
         id = UUID.randomUUID(),
         state = state,
         tags = emptySet(),
+        outputData = outputData,
         progress = progress
     )
 

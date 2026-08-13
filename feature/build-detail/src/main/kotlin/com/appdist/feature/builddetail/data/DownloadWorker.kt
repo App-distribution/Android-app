@@ -10,10 +10,12 @@ import com.appdist.core.downloads.DownloadWorkKeys
 import com.appdist.feature.builddetail.domain.VerifyChecksumUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import timber.log.Timber
 
 /**
  * ВНИМАНИЕ: полное имя класса хранится в базе WorkManager. Перенос в другой
@@ -74,6 +76,7 @@ class DownloadWorker @AssistedInject constructor(
             val request = Request.Builder().url(downloadUrl).build()
             okHttpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
+                    outputFile.delete()
                     downloadDao.upsert(row(DownloadWorkKeys.STATE_FAILED, 0f, 0L, null, null))
                     return@withContext if (response.code in 400..499) {
                         Result.failure(workDataOf(DownloadWorkKeys.KEY_ERROR to "HTTP ${response.code}"))
@@ -81,7 +84,12 @@ class DownloadWorker @AssistedInject constructor(
                         Result.retry()
                     }
                 }
-                val body = response.body ?: return@withContext Result.retry()
+                val body = response.body
+                if (body == null) {
+                    outputFile.delete()
+                    downloadDao.upsert(row(DownloadWorkKeys.STATE_FAILED, 0f, 0L, null, null))
+                    return@withContext Result.retry()
+                }
 
                 outputFile.outputStream().use { output ->
                     body.byteStream().use { input ->
@@ -93,27 +101,39 @@ class DownloadWorker @AssistedInject constructor(
                             output.write(buffer, 0, bytesRead)
                             totalRead += bytesRead
                             val progress = if (totalBytes > 0) totalRead.toFloat() / totalBytes else 0f
-                            setProgress(
-                                workDataOf(
-                                    DownloadWorkKeys.KEY_PROGRESS to progress,
-                                    DownloadWorkKeys.KEY_BYTES_LOADED to totalRead
-                                )
-                            )
-                            // Запись в БД троттлится: без этого на 14 МБ приходится
-                            // около 1700 upsert-ов.
+                            // setProgress пишет в БД самого WorkManager (отдельная
+                            // транзакция, инвалидирующая наблюдателей
+                            // getWorkInfosForUniqueWorkFlow) — троттлим его в той же
+                            // паре с записью в appdist.db, иначе на 14 МБ выходит
+                            // ~1700 записей в обе базы и столько же эмиссий в UI.
                             val now = System.currentTimeMillis()
                             if (now - lastWriteAt >= PROGRESS_WRITE_INTERVAL_MS) {
                                 lastWriteAt = now
+                                setProgress(
+                                    workDataOf(
+                                        DownloadWorkKeys.KEY_PROGRESS to progress,
+                                        DownloadWorkKeys.KEY_BYTES_LOADED to totalRead
+                                    )
+                                )
                                 downloadDao.upsert(
                                     row(DownloadWorkKeys.STATE_DOWNLOADING, progress, totalRead, null, null)
                                 )
                             }
                         }
+                        // Финальный прогресс не троттлится, иначе 100% может не
+                        // долететь до UI, если последний чанк попал внутрь окна.
+                        val finalProgress = if (totalBytes > 0) totalRead.toFloat() / totalBytes else 0f
+                        setProgress(
+                            workDataOf(
+                                DownloadWorkKeys.KEY_PROGRESS to finalProgress,
+                                DownloadWorkKeys.KEY_BYTES_LOADED to totalRead
+                            )
+                        )
                     }
                 }
             }
 
-            if (expectedChecksum != null) {
+            if (!expectedChecksum.isNullOrBlank()) {
                 downloadDao.upsert(row(DownloadWorkKeys.STATE_VERIFYING, 1f, totalBytes, null, null))
                 val verified = verifyChecksum(outputFile, expectedChecksum)
                 if (verified.isError) {
@@ -136,7 +156,15 @@ class DownloadWorker @AssistedInject constructor(
                 )
             )
             Result.success(workDataOf(DownloadWorkKeys.KEY_OUTPUT_PATH to outputFile.absolutePath))
+        } catch (e: CancellationException) {
+            // Не наш сбой, а отмена (constraint lost, doze, лимит в 10 минут,
+            // cancelUniqueWork). Проглатывание здесь запускало бы upsert в уже
+            // отменённом scope — suspend-вызов упал бы с исключением вместо
+            // записи failed, и строка вечно висела бы в состоянии downloading.
+            throw e
         } catch (e: Exception) {
+            Timber.e(e, "Download failed for build %s", buildId)
+            outputFile.delete()
             downloadDao.upsert(row(DownloadWorkKeys.STATE_FAILED, 0f, 0L, null, null))
             Result.retry()
         }

@@ -39,7 +39,7 @@ class StartDownloadUseCase @Inject constructor(
             .build()
 
         workManager.enqueueUniqueWork(
-            "download_${build.id}",
+            DownloadWorkKeys.uniqueWorkName(build.id),
             ExistingWorkPolicy.KEEP,
             request
         )
