@@ -117,6 +117,33 @@ class MineViewModelTest {
     }
 
     @Test
+    fun `legacy row without channel falls back to builds cache`() = runTest {
+        every { downloadRepository.observeDownloaded() } returns flowOf(
+            listOf(downloadedApk("legacy-channel", versionName = "2.1", versionCode = 21L, size = 10L, channel = ""))
+        )
+        coEvery { buildDao.getBuildById("legacy-channel") } returns
+            buildEntity("legacy-channel", "2.1", 21L, channel = "beta")
+
+        createViewModel().state.test {
+            assertEquals("beta", awaitItem().downloaded[0].channel)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `legacy row without channel and no cache hit leaves channel blank, not a dangling separator`() = runTest {
+        every { downloadRepository.observeDownloaded() } returns flowOf(
+            listOf(downloadedApk("no-cache", versionName = "2.1", versionCode = 21L, size = 10L, channel = ""))
+        )
+        coEvery { buildDao.getBuildById("no-cache") } returns null
+
+        createViewModel().state.test {
+            assertEquals("", awaitItem().downloaded[0].channel)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `delete download delegates to repository and list shrinks`() = runTest {
         val downloaded = MutableStateFlow(
             listOf(
@@ -148,20 +175,30 @@ class MineViewModelTest {
         coVerify { downloadRepository.deleteAll() }
     }
 
-    private fun downloadedApk(buildId: String, versionName: String, versionCode: Long, size: Long) =
-        DownloadedApk(
-            buildId = buildId,
-            filePath = "/data/$buildId.apk",
-            sizeBytes = size,
-            versionName = versionName,
-            versionCode = versionCode,
-            channel = "alpha",
-            completedAt = 1000L
-        )
+    private fun downloadedApk(
+        buildId: String,
+        versionName: String,
+        versionCode: Long,
+        size: Long,
+        channel: String = "alpha"
+    ) = DownloadedApk(
+        buildId = buildId,
+        filePath = "/data/$buildId.apk",
+        sizeBytes = size,
+        versionName = versionName,
+        versionCode = versionCode,
+        channel = channel,
+        completedAt = 1000L
+    )
 
-    private fun buildEntity(id: String, versionName: String, versionCode: Long) = BuildEntity(
+    private fun buildEntity(
+        id: String,
+        versionName: String,
+        versionCode: Long,
+        channel: String = "alpha"
+    ) = BuildEntity(
         id = id, projectId = "p1", versionName = versionName, versionCode = versionCode,
-        channel = "alpha", environment = "qa", changelog = null, fileSize = 10L,
+        channel = channel, environment = "qa", changelog = null, fileSize = 10L,
         checksumSha256 = "abc", status = "active", isLatestInChannel = true,
         uploadDate = 0L, uploaderName = "dev", cachedAt = 0L
     )

@@ -123,8 +123,13 @@ fun MineScreen(
                                 verticalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
                                 Text(apk.title, style = MaterialTheme.typography.bodyLarge)
+                                val sizeLine = if (apk.channel.isNotBlank()) {
+                                    "${apk.channel} · ${formatSize(apk.sizeBytes)}"
+                                } else {
+                                    formatSize(apk.sizeBytes)
+                                }
                                 Text(
-                                    "${apk.channel} · ${formatSize(apk.sizeBytes)}",
+                                    sizeLine,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

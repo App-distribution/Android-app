@@ -68,22 +68,22 @@ class MineViewModel @Inject constructor(
 
     /**
      * У строк, созданных версиями до миграции 1 → 2, метаданных сборки нет:
-     * versionName пустой, versionCode нулевой. Подставляем по цепочке
-     * строка → кэш builds → короткий идентификатор.
+     * versionName, channel пустые, versionCode нулевой. Подставляем по цепочке
+     * строка → кэш builds → короткий идентификатор (для title; channel просто
+     * остаётся пустым, если и в кэше ничего нет).
      */
     private suspend fun DownloadedApk.toUi(): DownloadedApkUi {
+        val cached = if (versionName.isBlank() || channel.isBlank()) buildDao.getBuildById(buildId) else null
         val title = when {
             versionName.isNotBlank() -> "v$versionName ($versionCode)"
-            else -> {
-                val cached = buildDao.getBuildById(buildId)
-                if (cached != null) "v${cached.versionName} (${cached.versionCode})"
-                else "Сборка ${buildId.take(8)}"
-            }
+            cached != null -> "v${cached.versionName} (${cached.versionCode})"
+            else -> "Сборка ${buildId.take(8)}"
         }
+        val resolvedChannel = channel.ifBlank { cached?.channel.orEmpty() }
         return DownloadedApkUi(
             buildId = buildId,
             title = title,
-            channel = channel,
+            channel = resolvedChannel,
             sizeBytes = sizeBytes,
             completedAt = completedAt
         )
