@@ -5,6 +5,9 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.appdist.core.database.dao.DownloadDao
 import com.appdist.core.database.entity.DownloadEntity
+import com.appdist.core.downloads.DownloadPaths
+import com.appdist.core.downloads.DownloadWorkKeys
+import com.appdist.feature.builddetail.domain.VerifyChecksumUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -13,40 +16,69 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 
+/**
+ * ВНИМАНИЕ: полное имя класса хранится в базе WorkManager. Перенос в другой
+ * пакет или модуль сделает невозможным исполнение работ, поставленных в очередь
+ * предыдущими версиями приложения.
+ */
 @HiltWorker
 class DownloadWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val downloadDao: DownloadDao,
-    private val okHttpClient: OkHttpClient
+    private val okHttpClient: OkHttpClient,
+    private val verifyChecksum: VerifyChecksumUseCase
 ) : CoroutineWorker(context, params) {
 
     companion object {
-        const val KEY_BUILD_ID = "build_id"
-        const val KEY_DOWNLOAD_URL = "download_url"
-        const val KEY_EXPECTED_CHECKSUM = "expected_checksum"
-        const val KEY_FILE_SIZE = "file_size"
-        const val KEY_OUTPUT_PATH = "output_path"
-        const val KEY_PROGRESS = "progress"
-        const val KEY_BYTES_LOADED = "bytes_loaded"
+        /** Не чаще одной записи прогресса в БД за этот интервал. */
+        private const val PROGRESS_WRITE_INTERVAL_MS = 250L
     }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val buildId = inputData.getString(KEY_BUILD_ID) ?: return@withContext Result.failure()
-        val downloadUrl = inputData.getString(KEY_DOWNLOAD_URL) ?: return@withContext Result.failure()
-        val totalBytes = inputData.getLong(KEY_FILE_SIZE, 0L)
+        val buildId = inputData.getString(DownloadWorkKeys.KEY_BUILD_ID)
+            ?: return@withContext Result.failure()
+        val downloadUrl = inputData.getString(DownloadWorkKeys.KEY_DOWNLOAD_URL)
+            ?: return@withContext Result.failure()
+        val totalBytes = inputData.getLong(DownloadWorkKeys.KEY_FILE_SIZE, 0L)
+        val expectedChecksum = inputData.getString(DownloadWorkKeys.KEY_EXPECTED_CHECKSUM)
 
-        val outputFile = File(applicationContext.cacheDir, "apk_downloads/$buildId.apk")
+        // Значения по умолчанию — для работ, поставленных в очередь до обновления:
+        // у них этих ключей в inputData нет.
+        val versionName = inputData.getString(DownloadWorkKeys.KEY_VERSION_NAME) ?: ""
+        val versionCode = inputData.getLong(DownloadWorkKeys.KEY_VERSION_CODE, 0L)
+        val channel = inputData.getString(DownloadWorkKeys.KEY_CHANNEL) ?: ""
+
+        val outputFile = DownloadPaths.apkFile(applicationContext, buildId)
             .also { it.parentFile?.mkdirs() }
 
+        fun row(state: String, progress: Float, loaded: Long, path: String?, completedAt: Long?) =
+            DownloadEntity(
+                buildId = buildId,
+                localPath = path,
+                state = state,
+                progress = progress,
+                bytesLoaded = loaded,
+                totalBytes = totalBytes,
+                startedAt = System.currentTimeMillis(),
+                versionName = versionName,
+                versionCode = versionCode,
+                channel = channel,
+                completedAt = completedAt
+            )
+
         try {
-            downloadDao.upsert(DownloadEntity(buildId, null, "downloading", 0f, 0L, totalBytes, System.currentTimeMillis()))
+            downloadDao.upsert(row(DownloadWorkKeys.STATE_DOWNLOADING, 0f, 0L, null, null))
 
             val request = Request.Builder().url(downloadUrl).build()
             okHttpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    return@withContext if (response.code in 400..499) Result.failure()
-                    else Result.retry()
+                    downloadDao.upsert(row(DownloadWorkKeys.STATE_FAILED, 0f, 0L, null, null))
+                    return@withContext if (response.code in 400..499) {
+                        Result.failure(workDataOf(DownloadWorkKeys.KEY_ERROR to "HTTP ${response.code}"))
+                    } else {
+                        Result.retry()
+                    }
                 }
                 val body = response.body ?: return@withContext Result.retry()
 
@@ -55,21 +87,56 @@ class DownloadWorker @AssistedInject constructor(
                         val buffer = ByteArray(8192)
                         var bytesRead: Int
                         var totalRead = 0L
+                        var lastWriteAt = 0L
                         while (input.read(buffer).also { bytesRead = it } != -1) {
                             output.write(buffer, 0, bytesRead)
                             totalRead += bytesRead
                             val progress = if (totalBytes > 0) totalRead.toFloat() / totalBytes else 0f
-                            setProgress(workDataOf(KEY_PROGRESS to progress, KEY_BYTES_LOADED to totalRead))
-                            downloadDao.upsert(DownloadEntity(buildId, null, "downloading", progress, totalRead, totalBytes, System.currentTimeMillis()))
+                            setProgress(
+                                workDataOf(
+                                    DownloadWorkKeys.KEY_PROGRESS to progress,
+                                    DownloadWorkKeys.KEY_BYTES_LOADED to totalRead
+                                )
+                            )
+                            // Запись в БД троттлится: без этого на 14 МБ приходится
+                            // около 1700 upsert-ов.
+                            val now = System.currentTimeMillis()
+                            if (now - lastWriteAt >= PROGRESS_WRITE_INTERVAL_MS) {
+                                lastWriteAt = now
+                                downloadDao.upsert(
+                                    row(DownloadWorkKeys.STATE_DOWNLOADING, progress, totalRead, null, null)
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            downloadDao.upsert(DownloadEntity(buildId, outputFile.absolutePath, "completed", 1f, totalBytes, totalBytes, System.currentTimeMillis()))
-            Result.success(workDataOf(KEY_OUTPUT_PATH to outputFile.absolutePath))
+            if (expectedChecksum != null) {
+                downloadDao.upsert(row(DownloadWorkKeys.STATE_VERIFYING, 1f, totalBytes, null, null))
+                val verified = verifyChecksum(outputFile, expectedChecksum)
+                if (verified.isError) {
+                    outputFile.delete()
+                    downloadDao.upsert(row(DownloadWorkKeys.STATE_FAILED, 0f, 0L, null, null))
+                    // Повтор не поможет: файл на сервере не совпадает с заявленной суммой.
+                    return@withContext Result.failure(
+                        workDataOf(DownloadWorkKeys.KEY_ERROR to "Контрольная сумма не совпала")
+                    )
+                }
+            }
+
+            downloadDao.upsert(
+                row(
+                    DownloadWorkKeys.STATE_READY,
+                    1f,
+                    totalBytes,
+                    outputFile.absolutePath,
+                    System.currentTimeMillis()
+                )
+            )
+            Result.success(workDataOf(DownloadWorkKeys.KEY_OUTPUT_PATH to outputFile.absolutePath))
         } catch (e: Exception) {
-            downloadDao.upsert(DownloadEntity(buildId, null, "failed", 0f, 0L, totalBytes, System.currentTimeMillis()))
+            downloadDao.upsert(row(DownloadWorkKeys.STATE_FAILED, 0f, 0L, null, null))
             Result.retry()
         }
     }

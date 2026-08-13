@@ -5,6 +5,7 @@ import com.appdist.core.common.AppError
 import com.appdist.core.common.Result
 import com.appdist.core.common.model.BuildUi
 import com.appdist.core.downloads.DownloadState
+import com.appdist.core.downloads.DownloadWorkKeys
 import com.appdist.feature.builddetail.data.DownloadWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -17,10 +18,10 @@ class DownloadBuildUseCase @Inject constructor(
     operator fun invoke(build: BuildUi, downloadUrl: String): Flow<DownloadState> {
         val request = OneTimeWorkRequestBuilder<DownloadWorker>()
             .setInputData(workDataOf(
-                DownloadWorker.KEY_BUILD_ID to build.id,
-                DownloadWorker.KEY_DOWNLOAD_URL to downloadUrl,
-                DownloadWorker.KEY_EXPECTED_CHECKSUM to build.checksumSha256,
-                DownloadWorker.KEY_FILE_SIZE to build.fileSize
+                DownloadWorkKeys.KEY_BUILD_ID to build.id,
+                DownloadWorkKeys.KEY_DOWNLOAD_URL to downloadUrl,
+                DownloadWorkKeys.KEY_EXPECTED_CHECKSUM to build.checksumSha256,
+                DownloadWorkKeys.KEY_FILE_SIZE to build.fileSize
             ))
             .setConstraints(Constraints(NetworkType.CONNECTED))
             .build()
@@ -34,12 +35,12 @@ class DownloadBuildUseCase @Inject constructor(
         return workManager.getWorkInfoByIdFlow(request.id).map { info ->
             when (info?.state) {
                 WorkInfo.State.RUNNING -> {
-                    val progress = info.progress.getFloat(DownloadWorker.KEY_PROGRESS, 0f)
-                    val bytes = info.progress.getLong(DownloadWorker.KEY_BYTES_LOADED, 0L)
+                    val progress = info.progress.getFloat(DownloadWorkKeys.KEY_PROGRESS, 0f)
+                    val bytes = info.progress.getLong(DownloadWorkKeys.KEY_BYTES_LOADED, 0L)
                     DownloadState.Downloading(progress, bytes)
                 }
                 WorkInfo.State.SUCCEEDED -> {
-                    val path = info.outputData.getString(DownloadWorker.KEY_OUTPUT_PATH)
+                    val path = info.outputData.getString(DownloadWorkKeys.KEY_OUTPUT_PATH)
                     if (path != null) {
                         val file = java.io.File(path)
                         val verified = verifyChecksum(file, build.checksumSha256)
