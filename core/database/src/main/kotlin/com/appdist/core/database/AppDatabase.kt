@@ -12,7 +12,7 @@ import com.appdist.core.database.entity.InstallHistoryEntity
 @Database(
     entities = [BuildEntity::class, InstallHistoryEntity::class, DownloadEntity::class],
     version = 1,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun buildDao(): BuildDao
