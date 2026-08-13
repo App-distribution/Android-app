@@ -3,6 +3,7 @@ package com.appdist.feature.builddetail.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -19,33 +20,43 @@ import java.util.*
 fun TechDetailsSection(build: BuildUi, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
 
-    Column(modifier) {
-        Row(
-            Modifier.fillMaxWidth().clickable { expanded = !expanded },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Технические детали", style = MaterialTheme.typography.titleMedium)
-            Icon(
-                if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = null
-            )
-        }
-
-        AnimatedVisibility(visible = expanded) {
-            val dateStr = remember(build.uploadDate) {
-                SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault()).format(Date(build.uploadDate))
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column {
+            Row(
+                Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("Технические детали", style = MaterialTheme.typography.titleMedium)
+                Icon(
+                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                DetailRow("versionCode", "${build.versionCode}")
-                build.branch?.let { DetailRow("branch", it) }
-                build.commitHash?.let { DetailRow("commit", it.take(12)) }
-                DetailRow("size", "${build.fileSize / 1024 / 1024} MB")
-                DetailRow("minSdk / targetSdk", "${build.minSdk} / ${build.targetSdk}")
-                if (build.abis.isNotEmpty()) DetailRow("ABIs", build.abis.joinToString(", "))
-                DetailRow("SHA-256", "${build.checksumSha256.take(16)}...")
-                DetailRow("uploader", build.uploaderName)
-                DetailRow("uploaded", dateStr)
+
+            AnimatedVisibility(visible = expanded) {
+                val dateStr = remember(build.uploadDate) {
+                    SimpleDateFormat("dd MMM yyyy HH:mm", Locale.getDefault()).format(Date(build.uploadDate))
+                }
+                Column(
+                    Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
+                    DetailRow("versionCode", "${build.versionCode}")
+                    build.branch?.let { DetailRow("branch", it) }
+                    build.commitHash?.let { DetailRow("commit", it.take(12)) }
+                    DetailRow("size", "${build.fileSize / 1024 / 1024} MB")
+                    DetailRow("minSdk / targetSdk", "${build.minSdk} / ${build.targetSdk}")
+                    if (build.abis.isNotEmpty()) DetailRow("ABIs", build.abis.joinToString(", "))
+                    DetailRow("SHA-256", "${build.checksumSha256.take(16)}...")
+                    if (build.uploaderName.isNotBlank()) DetailRow("uploader", build.uploaderName)
+                    DetailRow("uploaded", dateStr)
+                }
             }
         }
     }

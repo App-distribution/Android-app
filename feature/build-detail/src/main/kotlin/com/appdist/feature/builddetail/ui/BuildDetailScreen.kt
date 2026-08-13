@@ -3,6 +3,7 @@ package com.appdist.feature.builddetail.ui
 import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -16,6 +17,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.appdist.core.common.AppError
 import com.appdist.core.common.model.InstallStatus
 import com.appdist.core.ui.components.ErrorScreen
 import com.appdist.feature.builddetail.domain.DownloadState
@@ -56,9 +58,13 @@ fun BuildDetailScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(state.build?.let { "${it.projectName} v${it.versionName}" } ?: "") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+                title = { Text("Сборка", style = MaterialTheme.typography.titleMedium) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -87,18 +93,31 @@ fun BuildDetailScreen(
             state.isLoading -> LoadingScreen(modifier = Modifier.padding(padding))
             error != null -> ErrorScreen(
                 error = error,
+                title = "Не удалось загрузить сборку",
+                description = if (error is AppError.Network) {
+                    "Сервер не вернул данные этой сборки. Попробуйте ещё раз."
+                } else null,
                 onRetry = { viewModel.onAction(BuildDetailAction.RetryClicked) },
                 modifier = Modifier.padding(padding)
             )
             build != null -> Column(
                 Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
             ) {
-                BuildHeroSection(build, Modifier.padding(16.dp))
+                BuildHeroSection(
+                    build = build,
+                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp),
+                )
                 val changelog = build.changelog
                 if (!changelog.isNullOrBlank()) {
-                    ChangelogSection(changelog, Modifier.padding(horizontal = 16.dp))
+                    ChangelogSection(
+                        changelog = changelog,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 28.dp),
+                    )
                 }
-                TechDetailsSection(build, Modifier.padding(16.dp))
+                TechDetailsSection(
+                    build = build,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp),
+                )
                 Spacer(Modifier.height(80.dp))
             }
         }
@@ -111,7 +130,10 @@ private fun StickyInstallBar(
     downloadState: DownloadState,
     onAction: (BuildDetailAction) -> Unit
 ) {
-    Surface(shadowElevation = 8.dp) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp,
+    ) {
         Column(Modifier.padding(16.dp)) {
             if (downloadState is DownloadState.Downloading) {
                 LinearProgressIndicator(
@@ -146,8 +168,11 @@ private fun StickyInstallBar(
                         onAction(BuildDetailAction.DownloadOrInstallClicked)
                 },
                 enabled = enabled,
-                modifier = Modifier.fillMaxWidth()
-            ) { Text(buttonText) }
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                Text(buttonText, style = MaterialTheme.typography.labelLarge)
+            }
         }
     }
 }

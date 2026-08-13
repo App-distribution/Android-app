@@ -2,6 +2,7 @@ package com.appdist.feature.builddetail.data
 
 import android.os.Build
 import com.appdist.core.common.AppError
+import com.appdist.core.common.BackendException
 import com.appdist.core.common.Result
 import com.appdist.core.common.model.BuildUi
 import com.appdist.core.common.model.InstallStatus
@@ -22,10 +23,11 @@ class BuildDetailRepositoryImpl @Inject constructor(
     override fun getBuildDetail(buildId: String): Flow<BuildUi> = flow {
         val response = api.getBuild(buildId)
         if (response.isSuccessful) {
-            val body = response.body() ?: error("Empty body for build $buildId")
+            val body = response.body()
+                ?: throw BackendException(response.code(), "Empty body for build $buildId")
             emit(body.toUi())
         } else {
-            error("HTTP ${response.code()}: ${response.message()}")
+            throw BackendException(response.code(), response.message())
         }
     }
 

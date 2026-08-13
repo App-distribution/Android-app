@@ -20,14 +20,14 @@ interface ApiService {
     suspend fun logout(): Response<Unit>
 
     // Projects
-    @GET("api/v1/projects")
+    @GET("api/v1/public/projects")
     suspend fun getProjects(): Response<List<ProjectResponse>>
 
-    @GET("api/v1/projects/{id}")
+    @GET("api/v1/public/projects/{id}")
     suspend fun getProject(@Path("id") id: String): Response<ProjectResponse>
 
     // Builds
-    @GET("api/v1/projects/{projectId}/builds")
+    @GET("api/v1/public/projects/{projectId}/builds")
     suspend fun getBuilds(
         @Path("projectId") projectId: String,
         @Query("channel") channel: String? = null,
@@ -37,10 +37,10 @@ interface ApiService {
         @Query("limit") limit: Int = 20
     ): Response<List<BuildResponse>>
 
-    @GET("api/v1/builds/{id}")
+    @GET("api/v1/public/builds/{id}")
     suspend fun getBuild(@Path("id") id: String): Response<BuildResponse>
 
-    @GET("api/v1/builds/{id}/download-url")
+    @GET("api/v1/public/builds/{id}/download-url")
     suspend fun getDownloadUrl(@Path("id") id: String): Response<DownloadUrlResponse>
 
     @GET("api/v1/builds/recent")

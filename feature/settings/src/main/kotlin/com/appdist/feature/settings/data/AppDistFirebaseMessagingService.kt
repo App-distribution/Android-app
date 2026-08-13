@@ -6,11 +6,9 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import androidx.work.WorkManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class AppDistFirebaseMessagingService : FirebaseMessagingService() {
@@ -19,16 +17,11 @@ class AppDistFirebaseMessagingService : FirebaseMessagingService() {
         private const val NOTIFICATION_ID = 1001
     }
 
-    @Inject lateinit var workManager: WorkManager
-
     override fun onNewToken(token: String) {
         // TODO: send token to backend via UpdateMe API
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
-        if (message.data.containsKey("new_build")) {
-            SyncBuildsWorker.schedule(workManager)
-        }
         message.notification?.let { notification ->
             showNotification(
                 title = notification.title ?: "AppDistribution",

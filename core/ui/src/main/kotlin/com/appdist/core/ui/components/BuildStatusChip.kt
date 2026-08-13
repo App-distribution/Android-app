@@ -40,7 +40,7 @@ fun BuildStatusChip(
         color = fg,
         style = MaterialTheme.typography.labelSmall,
         modifier = modifier
-            .background(bg, RoundedCornerShape(4.dp))
-            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .background(bg, RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 5.dp)
     )
 }

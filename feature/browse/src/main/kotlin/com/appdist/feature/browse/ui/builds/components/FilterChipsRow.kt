@@ -1,19 +1,22 @@
 package com.appdist.feature.browse.ui.builds.components
 
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import com.appdist.feature.browse.ui.builds.BuildFilters
 
-val CHANNELS = listOf("alpha", "beta", "rc", "internal", "nightly")
-val ENVIRONMENTS = listOf("dev", "qa", "staging")
+val STANDS = listOf("dev3", "l10", "prod", "stage")
+val BUILD_TYPES = listOf("предрелиз", "приемочное")
 
 @Composable
 fun FilterChipsRow(
@@ -22,23 +25,37 @@ fun FilterChipsRow(
     onEnvironmentSelected: (String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(modifier.horizontalScroll(rememberScrollState())) {
-        CHANNELS.forEach { channel ->
+    Row(
+        modifier = modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        STANDS.forEach { stand ->
             FilterChip(
-                selected = filters.channel == channel,
-                onClick = { onChannelSelected(if (filters.channel == channel) null else channel) },
-                label = { Text(channel) }
+                selected = filters.environment == stand,
+                onClick = {
+                    onEnvironmentSelected(if (filters.environment == stand) null else stand)
+                },
+                label = { Text(stand, style = MaterialTheme.typography.labelSmall) },
+                shape = RoundedCornerShape(9.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                ),
+                modifier = Modifier.height(34.dp),
             )
-            Spacer(Modifier.width(4.dp))
         }
-        Spacer(Modifier.width(8.dp))
-        ENVIRONMENTS.forEach { env ->
+        BUILD_TYPES.forEach { type ->
             FilterChip(
-                selected = filters.environment == env,
-                onClick = { onEnvironmentSelected(if (filters.environment == env) null else env) },
-                label = { Text(env) }
+                selected = filters.channel == type,
+                onClick = { onChannelSelected(if (filters.channel == type) null else type) },
+                label = { Text(type, style = MaterialTheme.typography.labelSmall) },
+                shape = RoundedCornerShape(9.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                ),
+                modifier = Modifier.height(34.dp),
             )
-            Spacer(Modifier.width(4.dp))
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.work.WorkManager
 import app.cash.turbine.test
 import com.appdist.core.common.AppError
+import com.appdist.core.common.BackendException
 import com.appdist.core.common.Result
 import com.appdist.core.common.model.BuildUi
 import com.appdist.core.common.model.InstallStatus
@@ -88,13 +89,14 @@ class BuildDetailViewModelTest {
 
     @Test
     fun `error state set when build load fails`() = runTest {
-        every { getBuildDetail(any<String>()) } returns flow { throw RuntimeException("Network error") }
+        every { getBuildDetail(any<String>()) } returns flow { throw BackendException(503, "Unavailable") }
         val savedState = SavedStateHandle(mapOf("buildId" to "b1"))
         val vm = BuildDetailViewModel(savedState, context, getBuildDetail, getInstallStatus, downloadBuild, reportInstall, workManager)
         vm.state.test {
             val state = awaitItem()
             assertFalse(state.isLoading)
-            assertNotNull(state.error)
+            val error = state.error as AppError.Network
+            assertEquals(503, error.code)
             cancelAndIgnoreRemainingEvents()
         }
     }

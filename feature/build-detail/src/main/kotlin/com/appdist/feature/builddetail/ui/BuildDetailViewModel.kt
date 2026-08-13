@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.WorkManager
 import com.appdist.core.common.AppError
 import com.appdist.core.common.Result
+import com.appdist.core.common.toAppError
 import com.appdist.core.common.model.BuildUi
 import com.appdist.core.common.model.InstallStatus
 import com.appdist.feature.builddetail.domain.*
@@ -75,7 +76,7 @@ class BuildDetailViewModel @Inject constructor(
         viewModelScope.launch {
             getBuildDetail(buildId)
                 .catch { e ->
-                    _state.update { it.copy(isLoading = false, error = AppError.Unknown(e.message ?: "Error")) }
+                    _state.update { it.copy(isLoading = false, error = e.toAppError()) }
                 }
                 .collect { build ->
                     val status = getInstallStatus(build.packageName, build.versionCode, build.certFingerprint, build.minSdk)

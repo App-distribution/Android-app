@@ -1,6 +1,7 @@
 package com.appdist.core.common
 
 import java.net.SocketException
+import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
 sealed interface AppError {
@@ -14,7 +15,16 @@ sealed interface AppError {
     data class Unknown(val message: String) : AppError
 }
 
-fun Exception.toAppError(): AppError = when (this) {
-    is UnknownHostException, is SocketException -> AppError.NoInternet
+class BackendException(
+    val statusCode: Int,
+    override val message: String,
+) : Exception(message)
+
+fun Throwable.toAppError(): AppError = when (this) {
+    is BackendException -> when (statusCode) {
+        401, 403 -> AppError.Unauthorized
+        else -> AppError.Network(statusCode, message)
+    }
+    is UnknownHostException, is SocketException, is SocketTimeoutException -> AppError.NoInternet
     else -> AppError.Unknown(message ?: "Unknown error")
 }

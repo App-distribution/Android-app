@@ -2,6 +2,7 @@ package com.appdist.feature.browse.data
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.appdist.core.common.BackendException
 import com.appdist.core.common.model.BuildUi
 import com.appdist.core.network.ApiService
 import com.appdist.core.network.dto.BuildResponse
@@ -38,7 +39,7 @@ class BuildsPagingSource(
                     nextKey = if (items.isEmpty()) null else page + 1
                 )
             } else {
-                LoadResult.Error(Exception("HTTP ${response.code()}: ${response.message()}"))
+                LoadResult.Error(BackendException(response.code(), response.message()))
             }
         } catch (e: Exception) {
             LoadResult.Error(e)

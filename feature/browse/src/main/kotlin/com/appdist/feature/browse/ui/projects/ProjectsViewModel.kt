@@ -2,15 +2,20 @@ package com.appdist.feature.browse.ui.projects
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.appdist.core.common.AppError
+import com.appdist.core.common.Result
 import com.appdist.core.network.dto.ProjectResponse
 import com.appdist.feature.browse.domain.GetProjectsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class ProjectsUiState(
     val projects: List<ProjectResponse> = emptyList(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val error: AppError? = null,
 )
 
 @HiltViewModel
@@ -18,11 +23,34 @@ class ProjectsViewModel @Inject constructor(
     private val getProjects: GetProjectsUseCase
 ) : ViewModel() {
 
-    val state: StateFlow<ProjectsUiState> = getProjects()
-        .map { projects -> ProjectsUiState(projects = projects, isLoading = false) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = ProjectsUiState()
-        )
+    private val _state = MutableStateFlow(ProjectsUiState())
+    val state: StateFlow<ProjectsUiState> = _state.asStateFlow()
+
+    private var refreshJob: Job? = null
+
+    init {
+        viewModelScope.launch {
+            getProjects().collect { projects ->
+                _state.update { it.copy(projects = projects) }
+            }
+        }
+        refresh()
+    }
+
+    fun retry() = refresh()
+
+    private fun refresh() {
+        if (refreshJob?.isActive == true) return
+        refreshJob = viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, error = null) }
+            when (val result = getProjects.refresh()) {
+                is Result.Success -> _state.update {
+                    it.copy(projects = result.data, isLoading = false, error = null)
+                }
+                is Result.Error -> _state.update {
+                    it.copy(isLoading = false, error = result.error)
+                }
+            }
+        }
+    }
 }
