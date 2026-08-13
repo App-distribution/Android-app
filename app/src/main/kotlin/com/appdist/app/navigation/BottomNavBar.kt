@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 
 sealed class BottomNavDestination(
@@ -19,17 +20,20 @@ sealed class BottomNavDestination(
     val label: String,
     val icon: ImageVector
 ) {
-    data object Home : BottomNavDestination("home", "Home", Icons.Default.Home)
-    data object Browse : BottomNavDestination("browse", "Browse", Icons.Default.Search)
-    data object Mine : BottomNavDestination("mine", "Mine", Icons.Default.DownloadDone)
-    data object Profile : BottomNavDestination("profile", "Profile", Icons.Default.Person)
+    data object Home : BottomNavDestination("home", "Главная", Icons.Default.Home)
+    data object Browse : BottomNavDestination("browse", "Сборки", Icons.Default.Search)
+    data object Mine : BottomNavDestination("mine", "Мои", Icons.Default.DownloadDone)
+    data object Profile : BottomNavDestination("profile", "Профиль", Icons.Default.Person)
 }
 
+/**
+ * Только те вкладки, для которых в AppNavGraph есть маршрут. Home и Profile
+ * пока не подключены — их показ привёл бы к падению при нажатии, потому что
+ * navigate() по несуществующему маршруту бросает IllegalArgumentException.
+ */
 val bottomNavItems = listOf(
-    BottomNavDestination.Home,
     BottomNavDestination.Browse,
-    BottomNavDestination.Mine,
-    BottomNavDestination.Profile
+    BottomNavDestination.Mine
 )
 
 @Composable
@@ -43,7 +47,9 @@ fun BottomNavBar(navController: NavController) {
                 selected = currentRoute == dest.route,
                 onClick = {
                     navController.navigate(dest.route) {
-                        popUpTo("home") { saveState = true }
+                        // Стартовый пункт графа, а не жёстко заданный "home":
+                        // такого маршрута в графе нет, и popUpTo по нему падает.
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }
