@@ -7,6 +7,7 @@ import com.appdist.core.datastore.UserPreferencesStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -20,5 +21,10 @@ class MainViewModel @Inject constructor(
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode?> = prefsStore.themeMode
+        // DataStoreModule не задаёт corruptionHandler: повреждённый файл настроек
+        // роняет dataStore.data исключением, а этот ViewModel гейтит первый кадр —
+        // без catch необработанное исключение здесь крашит весь запуск приложения.
+        // Деградируем к системной теме вместо краха.
+        .catch { emit(ThemeMode.SYSTEM) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

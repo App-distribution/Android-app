@@ -1,5 +1,6 @@
 package com.appdist.app
 
+import android.content.res.Configuration
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -23,6 +24,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Сохранённый режим темы ещё не прочитан из DataStore на этом шаге — LaunchedEffect
+        // ниже отработает позже, а до этого стартовое окно ОС и первый пустой кадр показывают
+        // фон окна как есть. Ставим его по лучшей догадке — системной ночной настройке —
+        // чтобы не мелькал платформенный фон; когда придёт сохранённый выбор, LaunchedEffect
+        // поправит его, если тот разошёлся с системным.
+        val systemDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        window.setBackgroundDrawable(
+            ColorDrawable(
+                (if (systemDark) volcanicDarkColors() else volcanicLightColors()).ground.toArgb()
+            )
+        )
         setContent {
             val viewModel: MainViewModel = hiltViewModel()
             val mode by viewModel.themeMode.collectAsStateWithLifecycle()
