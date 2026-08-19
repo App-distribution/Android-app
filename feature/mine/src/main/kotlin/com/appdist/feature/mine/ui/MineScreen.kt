@@ -60,13 +60,9 @@ import com.appdist.core.ui.components.StorageBar
 import com.appdist.core.ui.components.VolcanicCard
 import com.appdist.core.ui.components.VolcanicScaffold
 import com.appdist.core.ui.components.bottomGapAfterInsets
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoLabel
 import com.appdist.core.ui.theme.MonoMeta
-import com.appdist.core.ui.theme.VolcanicAccent
-import com.appdist.core.ui.theme.VolcanicAction
-import com.appdist.core.ui.theme.VolcanicInk
-import com.appdist.core.ui.theme.VolcanicMuted
-import com.appdist.core.ui.theme.VolcanicPanelStrokeStrong
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -130,7 +126,7 @@ fun MineScreen(
             Text(
                 text = state.downloaded.size.toString().padStart(2, '0'),
                 style = MaterialTheme.typography.displaySmall,
-                color = VolcanicInk,
+                color = AppTheme.colors.ink,
             )
             Spacer(Modifier.height(12.dp))
             RailValue("${state.downloadedTotalBytes / 1024 / 1024}\nMB")
@@ -171,7 +167,7 @@ fun MineScreen(
                     Text(
                         text = "${state.downloaded.size} APK  ·  ${formatSize(state.downloadedTotalBytes)}",
                         style = MonoLabel,
-                        color = VolcanicMuted,
+                        color = AppTheme.colors.muted,
                     )
                     RouteSwitcher(
                         tabs = listOf(
@@ -200,12 +196,12 @@ fun MineScreen(
                                 Text(
                                     "${(download.progress * 100).toInt()}%",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = VolcanicAccent,
+                                    color = AppTheme.colors.accent,
                                 )
                             }
                             LinearProgressIndicator(
                                 progress = { download.progress },
-                                color = VolcanicAccent,
+                                color = AppTheme.colors.accent,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(5.dp),
@@ -214,7 +210,7 @@ fun MineScreen(
                                 Text(
                                     "${formatSize(download.bytesLoaded)} / ${formatSize(download.totalBytes)}",
                                     style = MonoMeta,
-                                    color = VolcanicMuted,
+                                    color = AppTheme.colors.muted,
                                 )
                             }
                         }
@@ -242,7 +238,7 @@ fun MineScreen(
                             Text(
                                 "ЛОКАЛЬНО  ·  ${formatSize(state.downloadedTotalBytes)}",
                                 style = MonoLabel,
-                                color = VolcanicMuted,
+                                color = AppTheme.colors.muted,
                                 modifier = Modifier.weight(1f),
                             )
                             TextButton(onClick = { showClearAllDialog = true }) { Text("Очистить") }
@@ -258,7 +254,7 @@ fun MineScreen(
                         Text(
                             "Пока нет установленных сборок",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = VolcanicMuted,
+                            color = AppTheme.colors.muted,
                             modifier = Modifier.padding(16.dp),
                         )
                     }
@@ -268,7 +264,7 @@ fun MineScreen(
                     val dateStr = remember(entry.installedAt) { dateFormatter.format(Date(entry.installedAt)) }
                     VolcanicCard(
                         cornerRadius = 18.dp,
-                        stroke = VolcanicPanelStrokeStrong,
+                        stroke = AppTheme.colors.panelStrokeStrong,
                         onClick = { onBuildClick(entry.buildId) },
                     ) {
                         Column(
@@ -279,8 +275,8 @@ fun MineScreen(
                                 "v${entry.versionName} (${entry.versionCode})",
                                 style = MaterialTheme.typography.titleMedium,
                             )
-                            Text(entry.packageName, style = MonoMeta, color = VolcanicMuted, maxLines = 1)
-                            Text(dateStr.uppercase(), style = MonoLabel, color = VolcanicAccent)
+                            Text(entry.packageName, style = MonoMeta, color = AppTheme.colors.muted, maxLines = 1)
+                            Text(dateStr.uppercase(), style = MonoLabel, color = AppTheme.colors.accent)
                         }
                     }
                 }
@@ -309,7 +305,7 @@ private fun DownloadedEntry(
     ) {
         Column(Modifier.padding(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 12.dp)) {
             if (apk.channel.isNotBlank()) {
-                Text(apk.channel.uppercase(), style = MonoLabel, color = VolcanicMuted)
+                Text(apk.channel.uppercase(), style = MonoLabel, color = AppTheme.colors.muted)
                 Spacer(Modifier.height(8.dp))
             }
             Text(
@@ -326,10 +322,10 @@ private fun DownloadedEntry(
             Text(
                 text = "BUILD ${apk.versionCode}  ·  ${formatSize(apk.sizeBytes)}",
                 style = MonoMeta,
-                color = VolcanicMuted,
+                color = AppTheme.colors.muted,
             )
             Spacer(Modifier.height(6.dp))
-            Text(completedAt.uppercase(), style = MonoLabel, color = VolcanicAccent)
+            Text(completedAt.uppercase(), style = MonoLabel, color = AppTheme.colors.accent)
             Row(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
@@ -344,21 +340,21 @@ private fun DownloadedEntry(
                     Icon(
                         Icons.Default.DeleteOutline,
                         contentDescription = "Удалить файл",
-                        tint = VolcanicMuted,
+                        tint = AppTheme.colors.muted,
                         modifier = Modifier.size(20.dp),
                     )
                 }
                 Box(
                     Modifier
                         .size(48.dp)
-                        .background(VolcanicInk, RoundedCornerShape(16.dp))
+                        .background(AppTheme.colors.ink, RoundedCornerShape(16.dp))
                         .clickable(onClick = onInstall),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.Default.DownloadDone,
                         contentDescription = "Установить",
-                        tint = VolcanicAction,
+                        tint = AppTheme.colors.action,
                         modifier = Modifier.size(20.dp),
                     )
                 }
@@ -369,7 +365,7 @@ private fun DownloadedEntry(
 
 @Composable
 private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
-    Text(text, style = MonoLabel, color = VolcanicAccent, modifier = modifier)
+    Text(text, style = MonoLabel, color = AppTheme.colors.accent, modifier = modifier)
 }
 
 private fun formatSize(bytes: Long): String = when {

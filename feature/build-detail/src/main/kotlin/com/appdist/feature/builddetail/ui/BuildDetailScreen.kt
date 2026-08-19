@@ -72,15 +72,10 @@ import com.appdist.core.ui.components.RailIconTarget
 import com.appdist.core.ui.components.RailLabel
 import com.appdist.core.ui.components.RailValue
 import com.appdist.core.ui.components.VolcanicScaffold
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoAction
 import com.appdist.core.ui.theme.MonoLabel
 import com.appdist.core.ui.theme.MonoMeta
-import com.appdist.core.ui.theme.VolcanicAccent
-import com.appdist.core.ui.theme.VolcanicAction
-import com.appdist.core.ui.theme.VolcanicInk
-import com.appdist.core.ui.theme.VolcanicMuted
-import com.appdist.core.ui.theme.VolcanicPanel
-import com.appdist.core.ui.theme.VolcanicPanelStroke
 import com.appdist.feature.builddetail.ui.components.ChangelogSection
 import com.appdist.feature.builddetail.ui.components.TechDetailsSection
 
@@ -138,7 +133,7 @@ fun BuildDetailScreen(
                 Text(
                     text = build.versionName.versionTail(),
                     style = MaterialTheme.typography.headlineSmall,
-                    color = VolcanicInk,
+                    color = AppTheme.colors.ink,
                 )
                 Spacer(Modifier.height(18.dp))
                 if (build.isLatestInChannel) {
@@ -221,7 +216,7 @@ fun BuildDetailScreen(
                                 build.branch?.takeIf { it.isNotBlank() }?.let { "BR:$it" },
                             ).joinToString("  ·  "),
                             style = MonoLabel,
-                            color = VolcanicMuted,
+                            color = AppTheme.colors.muted,
                         )
                         if (!build.changelog.isNullOrBlank()) {
                             ChangelogSection(
@@ -308,7 +303,7 @@ private fun PanelIconTarget(
     Box(
         Modifier
             .size(48.dp)
-            .background(VolcanicPanel, shape)
+            .background(AppTheme.colors.panel, shape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -399,13 +394,13 @@ private fun InstallAction(
                 Modifier
                     .width(52.dp)
                     .height(6.dp)
-                    .background(VolcanicAction.copy(alpha = .2f), RoundedCornerShape(3.dp)),
+                    .background(AppTheme.colors.action.copy(alpha = .2f), RoundedCornerShape(3.dp)),
             ) {
                 Box(
                     Modifier
                         .fillMaxWidth(downloading.progress.coerceIn(0f, 1f))
                         .height(6.dp)
-                        .background(VolcanicAction, RoundedCornerShape(3.dp)),
+                        .background(AppTheme.colors.action, RoundedCornerShape(3.dp)),
                 )
             }
             Spacer(Modifier.height(6.dp))

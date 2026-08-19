@@ -34,10 +34,8 @@ import com.appdist.core.ui.components.RailAction
 import com.appdist.core.ui.components.VolcanicCard
 import com.appdist.core.ui.components.VolcanicScaffold
 import com.appdist.core.ui.components.bottomGapAfterInsets
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoLabel
-import com.appdist.core.ui.theme.VolcanicAccent
-import com.appdist.core.ui.theme.VolcanicMuted
-import com.appdist.core.ui.theme.VolcanicPanel
 
 @Composable
 fun PermissionsScreen(
@@ -82,7 +80,7 @@ fun PermissionsScreen(
                 Modifier
                     .padding(top = 6.dp)
                     .size(48.dp)
-                    .background(VolcanicPanel, RoundedCornerShape(16.dp))
+                    .background(AppTheme.colors.panel, RoundedCornerShape(16.dp))
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center,
             ) {
@@ -94,10 +92,10 @@ fun PermissionsScreen(
             Text(
                 "Android должен разрешить AppDist устанавливать тестовые APK.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = VolcanicMuted,
+                color = AppTheme.colors.muted,
             )
             Spacer(Modifier.height(28.dp))
-            Text("КАК ВКЛЮЧИТЬ", style = MonoLabel, color = VolcanicAccent)
+            Text("КАК ВКЛЮЧИТЬ", style = MonoLabel, color = AppTheme.colors.accent)
             Spacer(Modifier.height(12.dp))
             VolcanicCard(cornerRadius = 18.dp) {
                 Column(Modifier.padding(16.dp)) {

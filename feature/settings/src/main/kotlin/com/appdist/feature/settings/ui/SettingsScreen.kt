@@ -49,13 +49,8 @@ import com.appdist.core.ui.components.RailLabel
 import com.appdist.core.ui.components.ReachBar
 import com.appdist.core.ui.components.VolcanicCard
 import com.appdist.core.ui.components.VolcanicScaffold
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoLabel
-import com.appdist.core.ui.theme.VolcanicAccent
-import com.appdist.core.ui.theme.VolcanicGround
-import com.appdist.core.ui.theme.VolcanicMuted
-import com.appdist.core.ui.theme.VolcanicMutedDim
-import com.appdist.core.ui.theme.VolcanicPanel
-import com.appdist.core.ui.theme.VolcanicPanelStroke
 
 @Composable
 fun SettingsScreen(
@@ -104,7 +99,7 @@ fun SettingsScreen(
                 Modifier
                     .padding(top = 6.dp)
                     .size(48.dp)
-                    .background(VolcanicPanel, RoundedCornerShape(16.dp))
+                    .background(AppTheme.colors.panel, RoundedCornerShape(16.dp))
                     .clickable(onClick = onBack),
                 contentAlignment = Alignment.Center,
             ) {
@@ -118,7 +113,7 @@ fun SettingsScreen(
             Text(
                 "Положение action-зоны",
                 style = MaterialTheme.typography.bodyLarge,
-                color = VolcanicMuted,
+                color = AppTheme.colors.muted,
             )
             Spacer(Modifier.height(14.dp))
             PlacementChoice(
@@ -140,18 +135,18 @@ fun SettingsScreen(
             Text(
                 "Основное действие переместится вместе с зоной. Содержимое и порядок экранов не изменятся.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = VolcanicMuted,
+                color = AppTheme.colors.muted,
             )
 
             Spacer(Modifier.height(28.dp))
-            Text("ЗОНА ДОСЯГАЕМОСТИ", style = MonoLabel, color = VolcanicAccent)
+            Text("ЗОНА ДОСЯГАЕМОСТИ", style = MonoLabel, color = AppTheme.colors.accent)
             Spacer(Modifier.height(12.dp))
             ReachBar(alignStart = state.actionZoneOnLeft)
             Spacer(Modifier.height(10.dp))
             Text(
                 "Основные действия собраны в action-зоне со стороны рабочей руки, по центру экрана — до них дотягиваешься, не перехватывая телефон.",
                 style = MaterialTheme.typography.bodySmall,
-                color = VolcanicMutedDim,
+                color = AppTheme.colors.mutedDim,
             )
 
             Spacer(Modifier.height(30.dp))
@@ -181,7 +176,7 @@ private fun PlacementChoice(
 ) {
     VolcanicCard(
         cornerRadius = 18.dp,
-        stroke = if (selected) VolcanicAccent else VolcanicPanelStroke,
+        stroke = if (selected) AppTheme.colors.accent else AppTheme.colors.panelStroke,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -200,7 +195,7 @@ private fun PlacementChoice(
                 .weight(1f)
                 .padding(start = 12.dp)) {
                 Text(label, style = MaterialTheme.typography.titleMedium)
-                Text(hint, style = MaterialTheme.typography.bodySmall, color = VolcanicMutedDim)
+                Text(hint, style = MaterialTheme.typography.bodySmall, color = AppTheme.colors.mutedDim)
             }
             HandednessPreview(onLeft = onLeft)
         }
@@ -213,14 +208,14 @@ private fun ChoiceDot(selected: Boolean) {
         Box(
             Modifier
                 .size(16.dp)
-                .background(VolcanicAccent, CircleShape),
+                .background(AppTheme.colors.accent, CircleShape),
         )
     } else {
         Box(
             Modifier
                 .size(16.dp)
-                .background(VolcanicGround, CircleShape)
-                .border(2.dp, VolcanicMutedDim, CircleShape),
+                .background(AppTheme.colors.ground, CircleShape)
+                .border(2.dp, AppTheme.colors.mutedDim, CircleShape),
         )
     }
 }

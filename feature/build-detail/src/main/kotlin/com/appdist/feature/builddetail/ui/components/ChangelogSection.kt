@@ -11,8 +11,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.appdist.core.ui.components.VolcanicCard
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoMeta
-import com.appdist.core.ui.theme.VolcanicMuted
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -40,7 +40,7 @@ fun ChangelogSection(
             Column(Modifier.padding(16.dp)) {
                 Text(changelog, style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(12.dp))
-                Text(meta, style = MonoMeta, color = VolcanicMuted)
+                Text(meta, style = MonoMeta, color = AppTheme.colors.muted)
             }
         }
     }
