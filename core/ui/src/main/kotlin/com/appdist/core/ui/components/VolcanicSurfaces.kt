@@ -31,18 +31,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoLabel
 import com.appdist.core.ui.theme.MonoMeta
 import com.appdist.core.ui.theme.MonoValue
-import com.appdist.core.ui.theme.VolcanicAccent
-import com.appdist.core.ui.theme.VolcanicActionPreview
-import com.appdist.core.ui.theme.VolcanicField
-import com.appdist.core.ui.theme.VolcanicGhost
-import com.appdist.core.ui.theme.VolcanicInk
-import com.appdist.core.ui.theme.VolcanicMutedDim
-import com.appdist.core.ui.theme.VolcanicPanel
-import com.appdist.core.ui.theme.VolcanicPanelStroke
-import com.appdist.core.ui.theme.VolcanicTrack
 
 /**
  * Панель журнала: полупрозрачный базальт с тонкой светлой рамкой. Граф
@@ -52,8 +44,8 @@ import com.appdist.core.ui.theme.VolcanicTrack
 fun VolcanicCard(
     modifier: Modifier = Modifier,
     cornerRadius: Dp = 18.dp,
-    fill: Color = VolcanicPanel,
-    stroke: Color = VolcanicPanelStroke,
+    fill: Color = AppTheme.colors.panel,
+    stroke: Color = AppTheme.colors.panelStroke,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -85,7 +77,7 @@ fun GhostNumeral(
             lineHeight = fontSize,
             letterSpacing = (-4).sp,
         ),
-        color = VolcanicGhost,
+        color = AppTheme.colors.ghost,
         modifier = modifier,
     )
 }
@@ -97,7 +89,7 @@ fun PanelDivider(modifier: Modifier = Modifier) {
         modifier
             .fillMaxWidth()
             .height(1.dp)
-            .background(VolcanicPanelStroke),
+            .background(AppTheme.colors.panelStroke),
     )
 }
 
@@ -142,14 +134,14 @@ private fun RouteTabItem(tab: RouteTab) {
         Text(
             text = tab.label.uppercase(),
             style = MonoLabel,
-            color = if (tab.selected) VolcanicInk else VolcanicMutedDim,
+            color = if (tab.selected) AppTheme.colors.ink else AppTheme.colors.mutedDim,
             modifier = Modifier.padding(vertical = 14.dp),
         )
         Box(
             Modifier
                 .fillMaxWidth()
                 .height(2.dp)
-                .background(if (tab.selected) VolcanicAccent else Color.Transparent),
+                .background(if (tab.selected) AppTheme.colors.accent else Color.Transparent),
         )
     }
 }
@@ -166,14 +158,14 @@ fun StorageBar(fraction: Float, modifier: Modifier = Modifier) {
         modifier
             .fillMaxWidth()
             .height(8.dp)
-            .background(VolcanicTrack, RoundedCornerShape(4.dp)),
+            .background(AppTheme.colors.track, RoundedCornerShape(4.dp)),
     ) {
         if (filled > 0f) {
             Box(
                 Modifier
                     .fillMaxWidth(filled)
                     .height(8.dp)
-                    .background(VolcanicAccent, RoundedCornerShape(4.dp)),
+                    .background(AppTheme.colors.accent, RoundedCornerShape(4.dp)),
             )
         }
     }
@@ -193,14 +185,14 @@ fun ReachBar(
         modifier
             .fillMaxWidth()
             .height(8.dp)
-            .background(VolcanicTrack, RoundedCornerShape(4.dp)),
+            .background(AppTheme.colors.track, RoundedCornerShape(4.dp)),
         contentAlignment = if (alignStart) Alignment.CenterStart else Alignment.CenterEnd,
     ) {
         Box(
             Modifier
                 .fillMaxWidth(sweetSpotFraction)
                 .height(8.dp)
-                .background(VolcanicAccent, RoundedCornerShape(4.dp)),
+                .background(AppTheme.colors.accent, RoundedCornerShape(4.dp)),
         )
     }
 }
@@ -214,8 +206,8 @@ fun HandednessPreview(onLeft: Boolean, modifier: Modifier = Modifier) {
             .width(34.dp)
             .height(52.dp)
             .clip(shape)
-            .background(VolcanicField)
-            .border(1.dp, VolcanicPanelStroke, shape),
+            .background(AppTheme.colors.previewGround)
+            .border(1.dp, AppTheme.colors.panelStroke, shape),
         contentAlignment = if (onLeft) Alignment.CenterStart else Alignment.CenterEnd,
     ) {
         Box(
@@ -223,7 +215,7 @@ fun HandednessPreview(onLeft: Boolean, modifier: Modifier = Modifier) {
                 .width(10.dp)
                 .height(52.dp)
                 .background(
-                    VolcanicActionPreview,
+                    AppTheme.colors.actionPreview,
                     if (onLeft) {
                         RoundedCornerShape(topEnd = 5.dp, bottomEnd = 5.dp)
                     } else {
@@ -245,13 +237,13 @@ fun MetaRow(label: String, value: String, modifier: Modifier = Modifier) {
         Text(
             text = label,
             style = MonoMeta,
-            color = VolcanicMutedDim,
+            color = AppTheme.colors.mutedDim,
             modifier = Modifier.weight(.42f),
         )
         Text(
             text = value,
             style = MonoValue,
-            color = VolcanicInk,
+            color = AppTheme.colors.ink,
             textAlign = TextAlign.End,
             modifier = Modifier.weight(.58f),
         )

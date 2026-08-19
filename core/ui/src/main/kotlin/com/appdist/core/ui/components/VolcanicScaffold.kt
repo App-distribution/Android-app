@@ -50,19 +50,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoAction
 import com.appdist.core.ui.theme.MonoLabel
-import com.appdist.core.ui.theme.VolcanicAccent
-import com.appdist.core.ui.theme.VolcanicAccentBright
-import com.appdist.core.ui.theme.VolcanicAction
-import com.appdist.core.ui.theme.VolcanicGraph
-import com.appdist.core.ui.theme.VolcanicGround
-import com.appdist.core.ui.theme.VolcanicInk
-import com.appdist.core.ui.theme.VolcanicNodeOutline
-import com.appdist.core.ui.theme.VolcanicNodeRelated
-import com.appdist.core.ui.theme.VolcanicRailDivider
-import com.appdist.core.ui.theme.VolcanicRailTarget
-import com.appdist.core.ui.theme.VolcanicRailTargetStroke
 
 /*
 THESIS: AppDist is a living build journal, expressed as a navigable release graph.
@@ -122,11 +112,11 @@ fun VolcanicScaffold(
     zoneTop: @Composable ColumnScope.() -> Unit = {},
     content: @Composable BoxScope.() -> Unit,
 ) {
-    CompositionLocalProvider(LocalContentColor provides VolcanicInk) {
+    CompositionLocalProvider(LocalContentColor provides AppTheme.colors.ink) {
         Row(
             modifier = modifier
                 .fillMaxSize()
-                .background(VolcanicGround),
+                .background(AppTheme.colors.ground),
         ) {
             if (side == ActionZoneSide.Left) {
                 ActionZoneContainer(side, zoneTop, zoneAction)
@@ -165,7 +155,7 @@ private fun ActionZoneContainer(
         modifier = Modifier
             .width(ActionZoneWidth)
             .fillMaxHeight()
-            .background(VolcanicAction, shape)
+            .background(AppTheme.colors.action, shape)
             // safeDrawing, а не системные бары по отдельности: сюда же попадает
             // вырез и боковая панель навигации в альбомной ориентации.
             .windowInsetsPadding(WindowInsets.safeDrawing)
@@ -202,8 +192,8 @@ fun RailIconTarget(
     Box(
         modifier = modifier
             .size(48.dp)
-            .background(VolcanicRailTarget, RoundedCornerShape(16.dp))
-            .border(1.dp, VolcanicRailTargetStroke, RoundedCornerShape(16.dp))
+            .background(AppTheme.colors.railTarget, RoundedCornerShape(16.dp))
+            .border(1.dp, AppTheme.colors.railTargetStroke, RoundedCornerShape(16.dp))
             .semantics {
                 this.contentDescription = contentDescription
                 role = Role.Button
@@ -211,7 +201,7 @@ fun RailIconTarget(
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = VolcanicInk, modifier = Modifier.size(21.dp))
+        Icon(icon, contentDescription = null, tint = AppTheme.colors.ink, modifier = Modifier.size(21.dp))
     }
 }
 
@@ -221,7 +211,7 @@ fun RailLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = MonoLabel,
-        color = VolcanicInk,
+        color = AppTheme.colors.ink,
         textAlign = TextAlign.Center,
         modifier = modifier.fillMaxWidth(),
     )
@@ -233,7 +223,7 @@ fun RailValue(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleMedium,
-        color = VolcanicInk,
+        color = AppTheme.colors.ink,
         textAlign = TextAlign.Center,
         modifier = modifier.fillMaxWidth(),
     )
@@ -245,12 +235,12 @@ fun RailDivider(modifier: Modifier = Modifier) {
         modifier
             .width(48.dp)
             .height(1.dp)
-            .background(VolcanicRailDivider),
+            .background(AppTheme.colors.railDivider),
     )
 }
 
 @Composable
-fun RailDot(modifier: Modifier = Modifier, color: Color = VolcanicAccentBright) {
+fun RailDot(modifier: Modifier = Modifier, color: Color = AppTheme.colors.accentBright) {
     Box(
         modifier
             .size(10.dp)
@@ -264,7 +254,7 @@ fun ActionCaption(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         style = MonoLabel,
-        color = VolcanicAccent,
+        color = AppTheme.colors.accent,
         textAlign = TextAlign.Center,
         modifier = modifier.width(ActionTileWidth),
     )
@@ -286,8 +276,8 @@ fun RailActionTile(
 ) {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = if (enabled) VolcanicInk else VolcanicRailTarget,
-        contentColor = if (enabled) VolcanicAction else VolcanicInk.copy(alpha = .45f),
+        color = if (enabled) AppTheme.colors.actionTile else AppTheme.colors.railTarget,
+        contentColor = if (enabled) AppTheme.colors.onActionTile else AppTheme.colors.ink.copy(alpha = .45f),
         modifier = modifier
             .width(ActionTileWidth)
             .heightIn(min = minHeight)
@@ -365,6 +355,14 @@ private enum class NodeState { Active, Related, Idle }
 
 @Composable
 private fun NavigationGraphBackground(destination: GraphDestination, mirrored: Boolean) {
+    // AppTheme.colors — @Composable-геттер, его нельзя читать внутри DrawScope
+    // (Canvas ниже), поэтому токены поднимаются в переменные заранее.
+    val graphColor = AppTheme.colors.graph
+    val accent = AppTheme.colors.accent
+    val accentBright = AppTheme.colors.accentBright
+    val nodeRelated = AppTheme.colors.nodeRelated
+    val nodeOutline = AppTheme.colors.nodeOutline
+    val ground = AppTheme.colors.ground
     Canvas(Modifier.fillMaxSize()) {
         val sx = size.width / GraphDesignWidth
         val sy = size.height / GraphDesignHeight
@@ -379,7 +377,7 @@ private fun NavigationGraphBackground(destination: GraphDestination, mirrored: B
             polyline(listOf(p(NodeJunction), p(CornerDownloads), p(NodeDownloads)))
             polyline(listOf(p(NodeJunction), p(CornerSettings), p(NodeSettings)))
         }
-        drawPath(base, VolcanicGraph, style = graphStroke(2.dp.toPx()))
+        drawPath(base, graphColor, style = graphStroke(2.dp.toPx()))
 
         val active = Path().apply {
             when (destination) {
@@ -397,14 +395,14 @@ private fun NavigationGraphBackground(destination: GraphDestination, mirrored: B
                     polyline(listOf(p(NodeApps), p(NodeJunction), p(CornerSettings), p(NodeSettings)))
             }
         }
-        drawPath(active, VolcanicAccent.copy(alpha = .6f), style = graphStroke(2.5.dp.toPx()))
+        drawPath(active, accent.copy(alpha = .6f), style = graphStroke(2.5.dp.toPx()))
 
-        drawCircle(VolcanicAccent, 3.dp.toPx(), p(NodeJunction))
-        drawNode(p(NodeApps), destination.stateOf(GraphDestination.Journals))
-        drawNode(p(NodeBuilds), destination.stateOf(GraphDestination.Builds))
-        drawNode(p(NodeDetail), destination.stateOf(GraphDestination.BuildDetail))
-        drawNode(p(NodeDownloads), destination.stateOf(GraphDestination.Downloads))
-        drawNode(p(NodeSettings), destination.stateOf(GraphDestination.Settings))
+        drawCircle(accent, 3.dp.toPx(), p(NodeJunction))
+        drawNode(p(NodeApps), destination.stateOf(GraphDestination.Journals), accent, accentBright, nodeRelated, ground, nodeOutline)
+        drawNode(p(NodeBuilds), destination.stateOf(GraphDestination.Builds), accent, accentBright, nodeRelated, ground, nodeOutline)
+        drawNode(p(NodeDetail), destination.stateOf(GraphDestination.BuildDetail), accent, accentBright, nodeRelated, ground, nodeOutline)
+        drawNode(p(NodeDownloads), destination.stateOf(GraphDestination.Downloads), accent, accentBright, nodeRelated, ground, nodeOutline)
+        drawNode(p(NodeSettings), destination.stateOf(GraphDestination.Settings), accent, accentBright, nodeRelated, ground, nodeOutline)
     }
 }
 
@@ -421,19 +419,27 @@ private fun GraphDestination.stateOf(node: GraphDestination): NodeState = when {
     else -> NodeState.Idle
 }
 
-private fun DrawScope.drawNode(center: Offset, state: NodeState) {
+private fun DrawScope.drawNode(
+    center: Offset,
+    state: NodeState,
+    accent: Color,
+    accentBright: Color,
+    nodeRelated: Color,
+    ground: Color,
+    nodeOutline: Color,
+) {
     when (state) {
         NodeState.Active -> {
-            drawCircle(VolcanicAccent, 7.dp.toPx(), center)
-            drawCircle(VolcanicAccentBright, 7.dp.toPx(), center, style = Stroke(2.dp.toPx()))
+            drawCircle(accent, 7.dp.toPx(), center)
+            drawCircle(accentBright, 7.dp.toPx(), center, style = Stroke(2.dp.toPx()))
         }
         NodeState.Related -> {
-            drawCircle(VolcanicNodeRelated, 5.dp.toPx(), center)
-            drawCircle(VolcanicAccent, 5.dp.toPx(), center, style = Stroke(2.dp.toPx()))
+            drawCircle(nodeRelated, 5.dp.toPx(), center)
+            drawCircle(accent, 5.dp.toPx(), center, style = Stroke(2.dp.toPx()))
         }
         NodeState.Idle -> {
-            drawCircle(VolcanicGround, 5.dp.toPx(), center)
-            drawCircle(VolcanicNodeOutline, 5.dp.toPx(), center, style = Stroke(2.dp.toPx()))
+            drawCircle(ground, 5.dp.toPx(), center)
+            drawCircle(nodeOutline, 5.dp.toPx(), center, style = Stroke(2.dp.toPx()))
         }
     }
 }
@@ -455,6 +461,13 @@ private fun Path.polyline(points: List<Offset>) {
  */
 @Composable
 fun GraphMark(modifier: Modifier = Modifier, markSize: Dp = 52.dp) {
+    // AppTheme.colors — @Composable-геттер, его нельзя читать внутри DrawScope
+    // (Canvas ниже), поэтому токены поднимаются в переменные заранее.
+    val ink = AppTheme.colors.ink
+    val accent = AppTheme.colors.accent
+    val accentBright = AppTheme.colors.accentBright
+    val nodeRelated = AppTheme.colors.nodeRelated
+    val ground = AppTheme.colors.ground
     Canvas(modifier.size(markSize)) {
         val s = size.minDimension / 320f
         fun p(x: Float, y: Float) = Offset(x * s, y * s)
@@ -472,25 +485,25 @@ fun GraphMark(modifier: Modifier = Modifier, markSize: Dp = 52.dp) {
             polyline(listOf(junction, downloadsCorner, downloads))
             polyline(listOf(junction, settingsCorner, settings))
         }
-        drawPath(base, VolcanicInk.copy(alpha = .45f), style = graphStroke(8f * s))
+        drawPath(base, ink.copy(alpha = .45f), style = graphStroke(8f * s))
 
         val route = Path().apply { polyline(listOf(apps, junction, logTop, logLatest)) }
-        drawPath(route, VolcanicAccent, style = graphStroke(11f * s))
+        drawPath(route, accent, style = graphStroke(11f * s))
 
-        drawCircle(VolcanicNodeRelated, 10f * s, apps)
-        drawCircle(VolcanicAccentBright, 10f * s, apps, style = Stroke(4f * s))
-        drawCircle(VolcanicInk, 7f * s, junction)
-        drawCircle(VolcanicNodeRelated, 9f * s, logTop)
-        drawCircle(VolcanicAccent, 9f * s, logTop, style = Stroke(4f * s))
+        drawCircle(nodeRelated, 10f * s, apps)
+        drawCircle(accentBright, 10f * s, apps, style = Stroke(4f * s))
+        drawCircle(ink, 7f * s, junction)
+        drawCircle(nodeRelated, 9f * s, logTop)
+        drawCircle(accent, 9f * s, logTop, style = Stroke(4f * s))
         listOf(p(162f, 176f), p(162f, 208f)).forEach { node ->
-            drawCircle(VolcanicGround, 8f * s, node)
-            drawCircle(VolcanicAccent, 8f * s, node, style = Stroke(3f * s))
+            drawCircle(ground, 8f * s, node)
+            drawCircle(accent, 8f * s, node, style = Stroke(3f * s))
         }
-        drawCircle(VolcanicAccent, 13f * s, logLatest)
-        drawCircle(VolcanicAccentBright, 13f * s, logLatest, style = Stroke(4f * s))
+        drawCircle(accent, 13f * s, logLatest)
+        drawCircle(accentBright, 13f * s, logLatest, style = Stroke(4f * s))
         listOf(downloads, settings).forEach { node ->
-            drawCircle(VolcanicGround, 9f * s, node)
-            drawCircle(VolcanicInk.copy(alpha = .6f), 9f * s, node, style = Stroke(4f * s))
+            drawCircle(ground, 9f * s, node)
+            drawCircle(ink.copy(alpha = .6f), 9f * s, node, style = Stroke(4f * s))
         }
     }
 }

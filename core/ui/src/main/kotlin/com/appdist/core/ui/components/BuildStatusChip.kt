@@ -8,14 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.appdist.core.ui.theme.StatusDeprecated
-import com.appdist.core.ui.theme.StatusDeprecatedContainer
-import com.appdist.core.ui.theme.StatusExpiring
-import com.appdist.core.ui.theme.StatusExpiringContainer
-import com.appdist.core.ui.theme.StatusLatest
-import com.appdist.core.ui.theme.StatusLatestContainer
-import com.appdist.core.ui.theme.StatusMandatory
-import com.appdist.core.ui.theme.StatusMandatoryContainer
+import com.appdist.core.ui.theme.AppTheme
 
 enum class BuildChipType {
     MANDATORY, LATEST, DEPRECATED, EXPIRING, CHANNEL, ENVIRONMENT
@@ -27,11 +20,12 @@ fun BuildStatusChip(
     type: BuildChipType,
     modifier: Modifier = Modifier
 ) {
+    val colors = AppTheme.colors
     val (bg, fg) = when (type) {
-        BuildChipType.MANDATORY -> StatusMandatoryContainer to StatusMandatory
-        BuildChipType.LATEST -> StatusLatestContainer to StatusLatest
-        BuildChipType.DEPRECATED -> StatusDeprecatedContainer to StatusDeprecated
-        BuildChipType.EXPIRING -> StatusExpiringContainer to StatusExpiring
+        BuildChipType.MANDATORY -> colors.statusMandatoryContainer to colors.statusMandatory
+        BuildChipType.LATEST -> colors.statusLatestContainer to colors.statusLatest
+        BuildChipType.DEPRECATED -> colors.statusDeprecatedContainer to colors.statusDeprecated
+        BuildChipType.EXPIRING -> colors.statusExpiringContainer to colors.statusExpiring
         BuildChipType.CHANNEL, BuildChipType.ENVIRONMENT ->
             MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
     }
