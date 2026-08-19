@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 data class SettingsUiState(
     val actionZoneOnLeft: Boolean = false,
-    val themeMode: ThemeMode = ThemeMode.SYSTEM
+    val themeMode: ThemeMode = ThemeMode.DEFAULT
 )
 
 @HiltViewModel

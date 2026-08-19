@@ -14,8 +14,14 @@ enum class ThemeMode {
     }
 
     companion object {
-        /** Значение из хранилища: неизвестное трактуем как SYSTEM. */
+        /**
+         * Режим по умолчанию: тёмная тема. Приложение задумано тёмным, светлая —
+         * осознанный выбор пользователя, а не следствие настройки телефона.
+         */
+        val DEFAULT = DARK
+
+        /** Значение из хранилища: пустое или неизвестное трактуем как режим по умолчанию. */
         fun fromStorage(raw: String?): ThemeMode =
-            entries.firstOrNull { it.name == raw } ?: SYSTEM
+            entries.firstOrNull { it.name == raw } ?: DEFAULT
     }
 }
