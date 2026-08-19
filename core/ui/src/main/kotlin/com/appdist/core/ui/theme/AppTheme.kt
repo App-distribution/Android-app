@@ -1,58 +1,49 @@
 package com.appdist.core.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.CompositionLocalProvider
 
-private val LightColorScheme = lightColorScheme(
-    primary = AppPrimary,
-    onPrimary = AppOnPrimary,
-    primaryContainer = AppPrimaryContainer,
-    onPrimaryContainer = AppOnPrimaryContainer,
-    secondary = AppOnSurfaceVariant,
-    onSecondary = AppOnPrimary,
-    secondaryContainer = AppSurfaceVariant,
-    onSecondaryContainer = AppOnSurface,
-    background = AppBackground,
-    onBackground = AppOnSurface,
-    surface = AppSurface,
-    onSurface = AppOnSurface,
-    surfaceVariant = AppSurfaceVariant,
-    onSurfaceVariant = AppOnSurfaceVariant,
-    outline = AppOutline,
-    outlineVariant = AppOutlineVariant,
-)
-
-private val DarkColorScheme = darkColorScheme(
-    primary = AppDarkPrimary,
-    onPrimary = Color.Black,
-    primaryContainer = Color(0xFF174E49),
-    onPrimaryContainer = Color(0xFFB8F0E9),
-    secondaryContainer = AppDarkSurfaceVariant,
-    onSecondaryContainer = AppDarkOnSurface,
-    background = AppDarkBackground,
-    onBackground = AppDarkOnSurface,
-    surface = AppDarkSurface,
-    onSurface = AppDarkOnSurface,
-    surfaceVariant = AppDarkSurfaceVariant,
-    onSurfaceVariant = AppDarkOnSurfaceVariant,
-    outline = AppDarkOutline,
-    outlineVariant = Color(0xFF2B3D41),
-)
+/**
+ * Схема Material выводится из фирменных токенов: тогда компоненты M3 без
+ * явно заданного цвета попадают в тему, а не в дефолтную палитру Material.
+ */
+private fun AppColors.toColorScheme(darkTheme: Boolean): ColorScheme {
+    val base = if (darkTheme) darkColorScheme() else lightColorScheme()
+    return base.copy(
+        primary = accent,
+        onPrimary = ground,
+        primaryContainer = action,
+        onPrimaryContainer = ink,
+        secondaryContainer = surfaceRaised,
+        onSecondaryContainer = ink,
+        background = ground,
+        onBackground = ink,
+        surface = surface,
+        onSurface = ink,
+        surfaceVariant = surfaceRaised,
+        onSurfaceVariant = muted,
+        outline = outline,
+        outlineVariant = outline,
+    )
+}
 
 @Composable
 fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colors = if (darkTheme) volcanicDarkColors() else volcanicLightColors()
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        content = content
-    )
+    CompositionLocalProvider(LocalAppColors provides colors) {
+        MaterialTheme(
+            colorScheme = colors.toColorScheme(darkTheme),
+            typography = AppTypography,
+            content = content
+        )
+    }
 }
