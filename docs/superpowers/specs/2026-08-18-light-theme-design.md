@@ -74,6 +74,7 @@ data class AppColors(
     val actionTile: Color, val onActionTile: Color,
     // рельс и граф навигации
     val railTarget: Color, val railTargetStroke: Color, val railDivider: Color,
+    val railDot: Color,
     val graph: Color, val nodeRelated: Color, val nodeOutline: Color,
     // превью хвата
     val previewGround: Color, val actionPreview: Color,
@@ -97,6 +98,16 @@ object AppTheme {
 собирает из неё `colorScheme` (`background = ground`, `surface = surface`,
 `onSurface = ink`, `onSurfaceVariant = muted`, `primary = accent`,
 `outline = outline` и далее по ролям).
+
+Семейство `surfaceContainer*` тоже выводится из токенов
+(`surfaceContainerLowest = ground`, `Low`/без суффикса `= surface`,
+`High`/`Highest` `= surfaceRaised`, `surfaceTint = accent`). Это не косметика:
+`AlertDialog` берёт фон именно из `surfaceContainerHigh`, а оба диалога в
+приложении его не переопределяют — без этого маппинга они рисовались бы на
+материальной поверхности вне палитры. Побочный эффект осознан: фон этих двух
+диалогов меняется и в тёмной теме — это единственное отступление от правила
+«тёмная тема не меняется», принятое потому, что материальный дефолт и был
+чужим цветом.
 
 ### Палитра
 
@@ -130,6 +141,7 @@ object AppTheme {
 | `railTarget` | `#052F35` | `#C4E0DA` | Settings Touch Target |
 | `railTargetStroke` | `0x33FFFFFF` | `#C5D3CF` | его stroke |
 | `railDivider` | `0x66FFFFFF` | `#9DB2AC` | Rail Divider |
+| `railDot` | `#C9FFF5` | `#0B756C` | Rail Latest Dot |
 | `graph` | `0x387FA09A` | `0x3F819C96` | Navigation Graph · Base |
 | `nodeRelated` | `#376C67` | `#84B6AD` | Nav Node · Related |
 | `nodeOutline` | `0x777FA09A` | `0x8A6F8F88` | Nav Node · Inactive stroke |

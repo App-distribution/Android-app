@@ -870,8 +870,8 @@ git commit -m "refactor(theme): перевести экраны сборки, з
 
 - [ ] **Step 1: Убедиться, что на файл никто не ссылается**
 
-Run: `grep -rn 'VolcanicGround\|VolcanicInk\|VolcanicAccent\|AppPrimary\|AppDarkPrimary\|StatusMandatory\|StatusLatest' --include='*.kt' app core feature | grep -v '/theme/AppColors.kt' | wc -l`
-Expected: `0`.
+Run: `grep -rn 'Volcanic[A-Z]\|StatusMandatory\|StatusLatest\|StatusDeprecated\|StatusExpiring\|AppPrimary\|AppDark\|AppBackground\|AppSurface\|AppOnSurface\|AppOutline' --include='*.kt' app core feature | grep -vE '/theme/(Color|AppColors)\.kt' | grep -vE 'VolcanicScaffold\(|VolcanicCard\(|fun VolcanicScaffold|fun VolcanicCard' | wc -l`
+Expected: `0`. Фильтр исключает сам удаляемый `Color.kt` (его собственные определения к делу не относятся) и имена компонентов `VolcanicScaffold`/`VolcanicCard`, которые сохраняются намеренно.
 
 - [ ] **Step 2: Удалить файл**
 
