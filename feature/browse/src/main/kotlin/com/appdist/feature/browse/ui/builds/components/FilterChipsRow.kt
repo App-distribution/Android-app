@@ -22,10 +22,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.appdist.core.ui.theme.VolcanicAction
-import com.appdist.core.ui.theme.VolcanicChip
-import com.appdist.core.ui.theme.VolcanicInk
-import com.appdist.core.ui.theme.VolcanicPanelStroke
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.feature.browse.ui.builds.BuildFilters
 
 val STANDS = listOf("dev3", "l10", "prod", "stage")
@@ -80,8 +77,8 @@ private fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit) {
         modifier = Modifier
             .height(48.dp)
             .widthIn(min = 61.dp)
-            .background(if (selected) VolcanicInk else VolcanicChip, shape)
-            .border(1.dp, VolcanicPanelStroke, shape)
+            .background(if (selected) AppTheme.colors.actionTile else AppTheme.colors.chip, shape)
+            .border(1.dp, AppTheme.colors.panelStroke, shape)
             .semantics {
                 role = Role.Tab
                 this.selected = selected
@@ -93,7 +90,7 @@ private fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = if (selected) VolcanicAction else VolcanicInk,
+            color = if (selected) AppTheme.colors.onActionTile else AppTheme.colors.ink,
         )
     }
 }

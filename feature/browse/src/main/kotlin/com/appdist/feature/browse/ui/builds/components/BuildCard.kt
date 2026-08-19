@@ -26,11 +26,9 @@ import androidx.compose.ui.unit.dp
 import com.appdist.core.common.model.BuildUi
 import com.appdist.core.common.model.InstallStatus
 import com.appdist.core.ui.components.VolcanicCard
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoAction
 import com.appdist.core.ui.theme.MonoMeta
-import com.appdist.core.ui.theme.VolcanicAccent
-import com.appdist.core.ui.theme.VolcanicInkSoft
-import com.appdist.core.ui.theme.VolcanicPanelStrokeStrong
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -48,7 +46,7 @@ fun BuildCard(
     VolcanicCard(
         modifier = modifier,
         cornerRadius = 18.dp,
-        stroke = VolcanicPanelStrokeStrong,
+        stroke = AppTheme.colors.panelStrokeStrong,
         onClick = onClick,
     ) {
         Row(
@@ -70,13 +68,13 @@ fun BuildCard(
                 Text(
                     text = "build ${build.versionCode}",
                     style = MonoMeta,
-                    color = VolcanicInkSoft,
+                    color = AppTheme.colors.inkSoft,
                 )
             }
             Text(
                 text = build.compactMeta(),
                 style = MonoAction,
-                color = VolcanicInkSoft,
+                color = AppTheme.colors.inkSoft,
                 textAlign = TextAlign.End,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -87,7 +85,7 @@ fun BuildCard(
                     is InstallStatus.Installed -> Icon(
                         Icons.Default.CheckCircle,
                         contentDescription = "Установлено",
-                        tint = VolcanicAccent,
+                        tint = AppTheme.colors.accent,
                         modifier = Modifier.size(22.dp),
                     )
                     else -> Icon(

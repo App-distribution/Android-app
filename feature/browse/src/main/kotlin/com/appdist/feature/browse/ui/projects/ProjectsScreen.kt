@@ -47,11 +47,9 @@ import com.appdist.core.ui.components.RouteTab
 import com.appdist.core.ui.components.VolcanicCard
 import com.appdist.core.ui.components.VolcanicScaffold
 import com.appdist.core.ui.components.bottomGapAfterInsets
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoLabel
 import com.appdist.core.ui.theme.MonoMeta
-import com.appdist.core.ui.theme.VolcanicAccent
-import com.appdist.core.ui.theme.VolcanicMuted
-import com.appdist.core.ui.theme.VolcanicPanelStroke
 
 @Composable
 fun ProjectsScreen(
@@ -158,7 +156,7 @@ private fun ProjectsHeader(count: Int, onDownloadsClick: () -> Unit) {
         Text(
             text = "ДОСТУПНО  ·  ${journalCode(count - 1)}",
             style = MonoLabel,
-            color = VolcanicMuted,
+            color = AppTheme.colors.muted,
         )
         RouteSwitcher(
             tabs = listOf(
@@ -179,7 +177,7 @@ private fun ProjectJournal(
 ) {
     VolcanicCard(
         cornerRadius = 20.dp,
-        stroke = VolcanicPanelStroke,
+        stroke = AppTheme.colors.panelStroke,
         onClick = onClick,
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -194,17 +192,17 @@ private fun ProjectJournal(
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = VolcanicAccent,
+                    tint = AppTheme.colors.accent,
                     modifier = Modifier.size(22.dp),
                 )
             }
             Spacer(Modifier.height(10.dp))
-            Text(project.packageName, style = MonoMeta, color = VolcanicMuted, maxLines = 1)
+            Text(project.packageName, style = MonoMeta, color = AppTheme.colors.muted, maxLines = 1)
             Spacer(Modifier.height(16.dp))
             PanelDivider()
             Spacer(Modifier.height(16.dp))
             if (latest != null) {
-                Text("LATEST BUILD", style = MonoLabel, color = VolcanicAccent)
+                Text("LATEST BUILD", style = MonoLabel, color = AppTheme.colors.accent)
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = latest.versionName.withVersionPrefix(),
@@ -218,15 +216,15 @@ private fun ProjectJournal(
                         latest.channel,
                     ).filter { it.isNotBlank() }.joinToString("  ·  "),
                     style = MonoMeta,
-                    color = VolcanicMuted,
+                    color = AppTheme.colors.muted,
                 )
             } else {
-                Text("ЖУРНАЛ ПУСТ", style = MonoLabel, color = VolcanicMuted)
+                Text("ЖУРНАЛ ПУСТ", style = MonoLabel, color = AppTheme.colors.muted)
                 Spacer(Modifier.height(6.dp))
                 Text(
                     "Откройте журнал, чтобы загрузить историю релизов.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = VolcanicMuted,
+                    color = AppTheme.colors.muted,
                 )
             }
         }

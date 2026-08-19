@@ -61,16 +61,10 @@ import com.appdist.core.ui.components.RailLabel
 import com.appdist.core.ui.components.RailValue
 import com.appdist.core.ui.components.VolcanicScaffold
 import com.appdist.core.ui.components.bottomGapAfterInsets
+import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoLabel
 import com.appdist.core.ui.theme.MonoMeta
 import com.appdist.core.ui.theme.MonoValue
-import com.appdist.core.ui.theme.VolcanicField
-import com.appdist.core.ui.theme.VolcanicGhostLabel
-import com.appdist.core.ui.theme.VolcanicInk
-import com.appdist.core.ui.theme.VolcanicInkSoft
-import com.appdist.core.ui.theme.VolcanicMuted
-import com.appdist.core.ui.theme.VolcanicMutedDim
-import com.appdist.core.ui.theme.VolcanicPanelStroke
 import com.appdist.feature.browse.ui.builds.components.BuildCard
 import com.appdist.feature.browse.ui.builds.components.FilterChipsRow
 import com.appdist.feature.browse.ui.builds.components.rememberUploadDate
@@ -134,13 +128,13 @@ fun BuildsScreen(
                 GhostNumeral("${latest.versionCode}")
                 GhostLabel(
                     "BUILD ${latest.versionCode}",
-                    color = VolcanicGhostLabel,
+                    color = AppTheme.colors.ghostLabel,
                     modifier = Modifier.padding(start = 8.dp, top = 4.dp),
                 )
                 latest.branch?.takeIf { it.isNotBlank() }?.let { branch ->
                     GhostLabel(
                         "BR:$branch / APK",
-                        color = VolcanicGhostLabel,
+                        color = AppTheme.colors.ghostLabel,
                         modifier = Modifier.padding(start = 8.dp, top = 4.dp),
                     )
                 }
@@ -159,7 +153,7 @@ fun BuildsScreen(
                 Text("Сборки", style = MaterialTheme.typography.displaySmall)
                 if (packageName.isNotBlank()) {
                     Spacer(Modifier.height(6.dp))
-                    Text(packageName, style = MonoMeta, color = VolcanicInkSoft)
+                    Text(packageName, style = MonoMeta, color = AppTheme.colors.inkSoft)
                 }
                 Spacer(Modifier.height(14.dp))
                 SearchField(
@@ -271,13 +265,13 @@ private fun LatestBuildHero(build: BuildUi, onClick: () -> Unit) {
             overflow = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(8.dp))
-        Text("build ${build.versionCode}", style = MonoValue, color = VolcanicInk)
+        Text("build ${build.versionCode}", style = MonoValue, color = AppTheme.colors.ink)
         Spacer(Modifier.height(10.dp))
         build.changelog?.takeIf { it.isNotBlank() }?.let { changelog ->
             Text(
                 text = changelog,
                 style = MaterialTheme.typography.bodyMedium,
-                color = VolcanicInkSoft,
+                color = AppTheme.colors.inkSoft,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -290,7 +284,7 @@ private fun LatestBuildHero(build: BuildUi, onClick: () -> Unit) {
                 build.branch?.takeIf { it.isNotBlank() }?.let { "BR:$it" },
             ).joinToString("  ·  "),
             style = MonoMeta,
-            color = VolcanicInkSoft,
+            color = AppTheme.colors.inkSoft,
         )
     }
 }
@@ -304,8 +298,8 @@ private fun SearchField(value: String, onValueChange: (String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
-            .background(VolcanicField, shape)
-            .border(1.dp, VolcanicPanelStroke, shape)
+            .background(AppTheme.colors.field, shape)
+            .border(1.dp, AppTheme.colors.panelStroke, shape)
             .padding(horizontal = 12.dp),
     ) {
         Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp))
@@ -314,15 +308,15 @@ private fun SearchField(value: String, onValueChange: (String) -> Unit) {
                 Text(
                     "Версия или ветка",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = VolcanicMutedDim,
+                    color = AppTheme.colors.mutedDim,
                 )
             }
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = true,
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = VolcanicInk),
-                cursorBrush = SolidColor(com.appdist.core.ui.theme.VolcanicAccent),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(color = AppTheme.colors.ink),
+                cursorBrush = SolidColor(AppTheme.colors.accent),
                 modifier = Modifier.fillMaxWidth(),
             )
         }
