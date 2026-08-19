@@ -1,5 +1,6 @@
 package com.appdist.feature.settings.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +32,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -38,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.appdist.core.common.model.ThemeMode
 import com.appdist.core.ui.components.ActionCaption
 import com.appdist.core.ui.components.ActionZoneSide
 import com.appdist.core.ui.components.GhostNumeral
@@ -51,6 +56,8 @@ import com.appdist.core.ui.components.VolcanicCard
 import com.appdist.core.ui.components.VolcanicScaffold
 import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoLabel
+import com.appdist.core.ui.theme.volcanicDarkColors
+import com.appdist.core.ui.theme.volcanicLightColors
 
 @Composable
 fun SettingsScreen(
@@ -108,6 +115,37 @@ fun SettingsScreen(
 
             Spacer(Modifier.height(14.dp))
             Text("Настройки", style = MaterialTheme.typography.displaySmall)
+
+            Spacer(Modifier.height(24.dp))
+            Text(
+                "Тема",
+                style = MaterialTheme.typography.bodyLarge,
+                color = AppTheme.colors.muted,
+            )
+            Spacer(Modifier.height(14.dp))
+            ThemeChoice(
+                label = "Как в системе",
+                hint = "следовать настройке телефона",
+                mode = ThemeMode.SYSTEM,
+                selected = state.themeMode == ThemeMode.SYSTEM,
+                onClick = { viewModel.setThemeMode(ThemeMode.SYSTEM) },
+            )
+            Spacer(Modifier.height(12.dp))
+            ThemeChoice(
+                label = "Светлая",
+                hint = "минеральная поверхность",
+                mode = ThemeMode.LIGHT,
+                selected = state.themeMode == ThemeMode.LIGHT,
+                onClick = { viewModel.setThemeMode(ThemeMode.LIGHT) },
+            )
+            Spacer(Modifier.height(12.dp))
+            ThemeChoice(
+                label = "Тёмная",
+                hint = "базальтовая земля",
+                mode = ThemeMode.DARK,
+                selected = state.themeMode == ThemeMode.DARK,
+                onClick = { viewModel.setThemeMode(ThemeMode.DARK) },
+            )
 
             Spacer(Modifier.height(24.dp))
             Text(
@@ -217,5 +255,78 @@ private fun ChoiceDot(selected: Boolean) {
                 .background(AppTheme.colors.ground, CircleShape)
                 .border(2.dp, AppTheme.colors.mutedDim, CircleShape),
         )
+    }
+}
+
+/**
+ * Выбор темы повторяет язык выбора хвата: точка, подпись и мини-превью
+ * телефона, залитого фоном соответствующей темы.
+ */
+@Composable
+private fun ThemeChoice(
+    label: String,
+    hint: String,
+    mode: ThemeMode,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    VolcanicCard(
+        cornerRadius = 18.dp,
+        stroke = if (selected) AppTheme.colors.accent else AppTheme.colors.panelStroke,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 78.dp)
+                .semantics {
+                    role = Role.RadioButton
+                    this.selected = selected
+                }
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            ChoiceDot(selected)
+            Column(Modifier
+                .weight(1f)
+                .padding(start = 12.dp)) {
+                Text(label, style = MaterialTheme.typography.titleMedium)
+                Text(hint, style = MaterialTheme.typography.bodySmall, color = AppTheme.colors.mutedDim)
+            }
+            ThemeSwatch(mode)
+        }
+    }
+}
+
+/** Мини-превью: сплошная заливка для светлой и тёмной, диагональ — для системной. */
+@Composable
+private fun ThemeSwatch(mode: ThemeMode) {
+    val shape = RoundedCornerShape(10.dp)
+    val dark = volcanicDarkColors().ground
+    val light = volcanicLightColors().ground
+    val stroke = AppTheme.colors.panelStroke
+    Box(
+        Modifier
+            .width(34.dp)
+            .height(52.dp)
+            .clip(shape)
+            .border(1.dp, stroke, shape),
+    ) {
+        when (mode) {
+            ThemeMode.LIGHT -> Box(Modifier.fillMaxSize().background(light))
+            ThemeMode.DARK -> Box(Modifier.fillMaxSize().background(dark))
+            ThemeMode.SYSTEM -> {
+                Box(Modifier.fillMaxSize().background(light))
+                Canvas(Modifier.fillMaxSize()) {
+                    val path = Path().apply {
+                        moveTo(size.width, 0f)
+                        lineTo(size.width, size.height)
+                        lineTo(0f, size.height)
+                        close()
+                    }
+                    drawPath(path, dark)
+                }
+            }
+        }
     }
 }
