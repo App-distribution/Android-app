@@ -119,9 +119,9 @@ object AppTheme {
 | `ink` | `#ECF1EF` | `#132D29` | заголовки |
 | `inkSoft` | `#D5E0DD` | `#334D47` | вторичный текст |
 | `muted` | `#A9BCB8` | `#516A65` | подписи |
-| `mutedDim` | `#8FA7A3` | `#607A74` | мелкие подписи |
+| `mutedDim` | `#8FA7A3` | `#5B736D` | мелкие подписи, скорректировано |
 | `ghost` | `0x08FFFFFF` | `0x0D0B3F3C` | Ghost Numeral |
-| `ghostLabel` | `0x33AFC5C0` | `0x66607A74` | выведено |
+| `ghostLabel` | `0x33AFC5C0` | `0x665B736D` | выведено |
 | `accent` | `#9DDDD2` | `#0B756C` | teal-акцент |
 | `accentBright` | `#C9FFF5` | `#F4FFFC` | обводка активного узла |
 | `action` | `#063F47` | `#D6ECE7` | Teal Route Rail |
@@ -152,6 +152,12 @@ object AppTheme {
 | `statusLatest` | `#9DDDD2` | `#0B756C` |
 | `statusLatestContainer` | `#063F47` | `#D6ECE7` |
 
+Одно отступление от макета:
+
+- `mutedDim` в макете — `#607A74`, что на фоне `ground` даёт контраст 4.35:1
+  при пороге WCAG AA 4.5:1, а набран им мелкий текст 11px. Значение затемнено
+  до `#5B736D` (4.78:1); оттенок сохранён. Макет правится соответственно.
+
 Два выведенных значения помимо статусов:
 
 - `ghostLabel` — макет не содержит ghost-подписей в светлой версии. Берётся
@@ -164,7 +170,8 @@ object AppTheme {
 ## Выбор темы
 
 **Модель.** `ThemeMode { SYSTEM, LIGHT, DARK }` в
-`core/common/model/ThemeMode.kt` — виден datastore, ui и feature-модулям.
+`core/common/model/ThemeMode.kt`. `core/ui` уже зависит от `core:common`, а
+`core/datastore` — нет, ему нужно добавить `implementation(project(":core:common"))`.
 
 **Хранение.** В `UserPreferencesStore` добавляются
 `stringPreferencesKey("theme_mode")`, `themeMode: Flow<ThemeMode>` с дефолтом
@@ -241,8 +248,8 @@ action-зоны.
   текста и 3:1 для крупного. Если `androidx.compose.ui.graphics.Color` окажется
   недоступен в JVM-тестах, тест переводится на ARGB-литералы.
 
-**Compose Preview.** В `core/ui` подключаются `ui-tooling-preview`
-(`implementation`) и `ui-tooling` (`debugImplementation`). `@Preview` в паре
+**Compose Preview.** `ui-tooling-preview` и `ui-tooling` в `core/ui` уже
+подключены — новых зависимостей не нужно. `@Preview` в паре
 `UI_MODE_NIGHT_NO`/`UI_MODE_NIGHT_YES` добавляются для компонентов, а не
 экранов (экраны завязаны на `hiltViewModel()`): рельс и CTA-плитка, карточка
 проекта, `BuildCard`, `FilterChipsRow`, новый выбор темы.
