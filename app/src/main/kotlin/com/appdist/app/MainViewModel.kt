@@ -22,9 +22,11 @@ class MainViewModel @Inject constructor(
 
     val themeMode: StateFlow<ThemeMode?> = prefsStore.themeMode
         // DataStoreModule не задаёт corruptionHandler: повреждённый файл настроек
-        // роняет dataStore.data исключением, а этот ViewModel гейтит первый кадр —
-        // без catch необработанное исключение здесь крашит весь запуск приложения.
-        // Деградируем к системной теме вместо краха.
+        // роняет dataStore.data исключением. catch защищает только этот поток —
+        // themeMode это get()-свойство, и каждый вызов создаёт новый Flow, так что
+        // AppNavViewModel и SettingsViewModel собирают свои экземпляры без catch и
+        // всё равно упадут при повреждённом сторе. Здесь мы лишь не даём гейту
+        // первого кадра рухнуть и деградируем к системной теме вместо краха.
         .catch { emit(ThemeMode.SYSTEM) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }

@@ -240,7 +240,7 @@ fun RailDivider(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun RailDot(modifier: Modifier = Modifier, color: Color = AppTheme.colors.accentBright) {
+fun RailDot(modifier: Modifier = Modifier, color: Color = AppTheme.colors.railDot) {
     Box(
         modifier
             .size(10.dp)

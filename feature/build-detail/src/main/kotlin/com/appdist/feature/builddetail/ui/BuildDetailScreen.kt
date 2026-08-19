@@ -394,13 +394,13 @@ private fun InstallAction(
                 Modifier
                     .width(52.dp)
                     .height(6.dp)
-                    .background(AppTheme.colors.action.copy(alpha = .2f), RoundedCornerShape(3.dp)),
+                    .background(AppTheme.colors.onActionTile.copy(alpha = .2f), RoundedCornerShape(3.dp)),
             ) {
                 Box(
                     Modifier
                         .fillMaxWidth(downloading.progress.coerceIn(0f, 1f))
                         .height(6.dp)
-                        .background(AppTheme.colors.action, RoundedCornerShape(3.dp)),
+                        .background(AppTheme.colors.onActionTile, RoundedCornerShape(3.dp)),
                 )
             }
             Spacer(Modifier.height(6.dp))

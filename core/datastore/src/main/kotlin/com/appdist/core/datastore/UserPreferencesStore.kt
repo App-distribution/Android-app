@@ -29,6 +29,8 @@ class UserPreferencesStore @Inject constructor(
         prefs[KEY_ACTION_ZONE_ON_LEFT] ?: false
     }
 
+    // Намеренно get(), а не eager val, как у соседних полей: eager val захватил бы
+    // dataStore.data ещё до того, как тесты подменят мок — не упрощать обратно.
     val themeMode: Flow<ThemeMode>
         get() = dataStore.data.map { prefs ->
             ThemeMode.fromStorage(prefs[KEY_THEME_MODE])

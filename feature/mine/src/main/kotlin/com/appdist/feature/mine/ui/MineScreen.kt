@@ -347,14 +347,14 @@ private fun DownloadedEntry(
                 Box(
                     Modifier
                         .size(48.dp)
-                        .background(AppTheme.colors.ink, RoundedCornerShape(16.dp))
+                        .background(AppTheme.colors.actionTile, RoundedCornerShape(16.dp))
                         .clickable(onClick = onInstall),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.Default.DownloadDone,
                         contentDescription = "Установить",
-                        tint = AppTheme.colors.action,
+                        tint = AppTheme.colors.onActionTile,
                         modifier = Modifier.size(20.dp),
                     )
                 }
