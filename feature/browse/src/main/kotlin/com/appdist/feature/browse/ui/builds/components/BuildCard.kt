@@ -1,23 +1,18 @@
 package com.appdist.feature.browse.ui.builds.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material3.Badge
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,109 +20,103 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.appdist.core.common.model.BuildUi
 import com.appdist.core.common.model.InstallStatus
-import com.appdist.core.ui.components.BuildChipType
-import com.appdist.core.ui.components.BuildStatusChip
+import com.appdist.core.ui.components.VolcanicCard
+import com.appdist.core.ui.theme.MonoAction
+import com.appdist.core.ui.theme.MonoMeta
+import com.appdist.core.ui.theme.VolcanicAccent
+import com.appdist.core.ui.theme.VolcanicInkSoft
+import com.appdist.core.ui.theme.VolcanicPanelStrokeStrong
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * Строка истории релизов: версия и номер сборки слева, сжатые метаданные
+ * справа, отдельный 48dp-таргет открытия. Содержимое не касается краёв карточки.
+ */
 @Composable
 fun BuildCard(
     build: BuildUi,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    featured: Boolean = false,
 ) {
-    val dateStr = remember(build.uploadDate) {
-        SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(build.uploadDate))
-    }
-    val version = build.versionName.takeIf { it.startsWith("v") } ?: "v${build.versionName}"
-
-    Card(
+    VolcanicCard(
+        modifier = modifier,
+        cornerRadius = 18.dp,
+        stroke = VolcanicPanelStrokeStrong,
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(if (featured) 16.dp else 14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (featured) 3.dp else 0.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Column(Modifier.padding(if (featured) 20.dp else 16.dp)) {
-            if (featured) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 72.dp)
+                .padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+        ) {
+            Column(Modifier.weight(1f)) {
                 Text(
-                    text = "LATEST BUILD",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
+                    text = build.versionName.withVersionPrefix(),
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.height(8.dp))
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = version,
-                    style = if (featured) MaterialTheme.typography.displaySmall
-                    else MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
+                Spacer(Modifier.height(3.dp))
                 Text(
                     text = "build ${build.versionCode}",
-                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MonoMeta,
+                    color = VolcanicInkSoft,
                 )
-                Spacer(Modifier.size(8.dp))
+            }
+            Text(
+                text = build.compactMeta(),
+                style = MonoAction,
+                color = VolcanicInkSoft,
+                textAlign = TextAlign.End,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(.8f),
+            )
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                 when (build.installStatus) {
-                    is InstallStatus.UpdateAvailable -> Badge { Text("↑") }
                     is InstallStatus.Installed -> Icon(
                         Icons.Default.CheckCircle,
-                        contentDescription = "Installed",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp),
+                        contentDescription = "Установлено",
+                        tint = VolcanicAccent,
+                        modifier = Modifier.size(22.dp),
                     )
-                    else -> Unit
+                    else -> Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                    )
                 }
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            Spacer(Modifier.height(if (featured) 12.dp else 10.dp))
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                BuildStatusChip(build.channel, BuildChipType.CHANNEL)
-                if (build.isLatestInChannel) BuildStatusChip("LATEST", BuildChipType.LATEST)
-                BuildStatusChip(build.environment, BuildChipType.ENVIRONMENT)
-                if (build.status == "mandatory") BuildStatusChip("MANDATORY", BuildChipType.MANDATORY)
-                if (build.status == "deprecated") BuildStatusChip("DEPRECATED", BuildChipType.DEPRECATED)
-            }
-
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = "$dateStr · ${build.fileSize / 1024 / 1024} MB",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            if (featured && !build.changelog.isNullOrBlank()) {
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = build.changelog.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2,
-                )
             }
         }
     }
 }
+
+/** Дата загрузки сборки в моно-ритме макета. */
+@Composable
+fun rememberUploadDate(uploadDate: Long, pattern: String = "dd MMM yyyy"): String = remember(uploadDate) {
+    SimpleDateFormat(pattern, Locale.getDefault()).format(Date(uploadDate))
+}
+
+/**
+ * Две явные строки, а не свободный перенос: канал со стендом читаются вместе,
+ * ветка — отдельно. Иначе длинное окружение съедает ветку многоточием.
+ */
+internal fun BuildUi.compactMeta(): String {
+    val head = listOf(channel.take(3).uppercase(), environment.uppercase())
+        .filter { it.isNotBlank() }
+        .joinToString(" · ")
+    val branchLine = branch?.takeIf { it.isNotBlank() }?.let { "BR:${it.take(9)}" }
+    return listOfNotNull(head.takeIf { it.isNotBlank() }, branchLine).joinToString("\n")
+}
+
+internal fun String.withVersionPrefix(): String = if (startsWith("v")) this else "v$this"

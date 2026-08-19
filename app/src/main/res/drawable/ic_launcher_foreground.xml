@@ -1,10 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Стрела в приёмник: дистрибуция сборки. Три фигуры, обводка 9 из 108 (8,3 %
+  ширины) — знак не рассыпается на 48 dp в списке приложений.
+
+  Координаты: макет иконки 320×320 отображён в безопасную зону 72×72
+  (масштаб 0.225, сдвиг 18) внутри 108×108. Крайняя точка знака отстоит от
+  центра на 30,1 — внутри гарантированно видимой окружности радиуса 33.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!-- Приёмник. -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,54m-40,0a40,40 0,1 1,80 0a40,40 0,1 1,-80 0" />
+        android:fillColor="@android:color/transparent"
+        android:pathData="M38.7,76.05 L69.3,76.05"
+        android:strokeColor="#9DDDD2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="9" />
+
+    <!-- Древко. -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M54,31.05 L54,60.75"
+        android:strokeColor="#ECF1EF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="9" />
+
+    <!-- Наконечник. -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M42.75,49.5 L54,60.75 L65.25,49.5"
+        android:strokeColor="#ECF1EF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="9" />
 </vector>

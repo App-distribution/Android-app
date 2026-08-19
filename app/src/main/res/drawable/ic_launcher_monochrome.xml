@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Монохромный слой для themed icons: та же геометрия, что и в основном знаке,
+  но одним цветом — систему интересует только силуэт, она перекрашивает его
+  целиком.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M38.7,76.05 L69.3,76.05 M54,31.05 L54,60.75 M42.75,49.5 L54,60.75 L65.25,49.5"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="9" />
+</vector>

@@ -3,6 +3,7 @@ package com.appdist.feature.browse
 import app.cash.turbine.test
 import com.appdist.core.common.AppError
 import com.appdist.core.common.Result
+import com.appdist.core.database.dao.BuildDao
 import com.appdist.core.network.dto.ProjectResponse
 import com.appdist.feature.browse.domain.GetProjectsUseCase
 import com.appdist.feature.browse.domain.ProjectRepository
@@ -30,13 +31,16 @@ class ProjectsViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var repository: ProjectRepository
+    private lateinit var buildDao: BuildDao
     private val projects = MutableStateFlow<List<ProjectResponse>>(emptyList())
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = mockk()
+        buildDao = mockk()
         every { repository.getProjects() } returns projects
+        every { buildDao.getLatestBuildPerProject() } returns MutableStateFlow(emptyList())
     }
 
     @AfterEach
@@ -50,7 +54,7 @@ class ProjectsViewModelTest {
             AppError.Network(503, "Unavailable")
         )
 
-        val viewModel = ProjectsViewModel(GetProjectsUseCase(repository))
+        val viewModel = ProjectsViewModel(GetProjectsUseCase(repository), buildDao)
 
         viewModel.state.test {
             val state = awaitItem()
@@ -74,7 +78,7 @@ class ProjectsViewModelTest {
             Result.Success(listOf(project)),
         )
 
-        val viewModel = ProjectsViewModel(GetProjectsUseCase(repository))
+        val viewModel = ProjectsViewModel(GetProjectsUseCase(repository), buildDao)
         viewModel.retry()
 
         viewModel.state.test {

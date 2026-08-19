@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.appdist.core.common.AppError
 import com.appdist.core.common.Result
+import com.appdist.core.database.dao.BuildDao
+import com.appdist.core.database.entity.BuildEntity
 import com.appdist.core.network.dto.ProjectResponse
 import com.appdist.feature.browse.domain.GetProjectsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,13 +16,15 @@ import javax.inject.Inject
 
 data class ProjectsUiState(
     val projects: List<ProjectResponse> = emptyList(),
+    val latestBuilds: Map<String, BuildEntity> = emptyMap(),
     val isLoading: Boolean = true,
     val error: AppError? = null,
 )
 
 @HiltViewModel
 class ProjectsViewModel @Inject constructor(
-    private val getProjects: GetProjectsUseCase
+    private val getProjects: GetProjectsUseCase,
+    buildDao: BuildDao,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProjectsUiState())
@@ -32,6 +36,11 @@ class ProjectsViewModel @Inject constructor(
         viewModelScope.launch {
             getProjects().collect { projects ->
                 _state.update { it.copy(projects = projects) }
+            }
+        }
+        viewModelScope.launch {
+            buildDao.getLatestBuildPerProject().collect { builds ->
+                _state.update { it.copy(latestBuilds = builds.associateBy { build -> build.projectId }) }
             }
         }
         refresh()

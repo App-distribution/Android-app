@@ -3,6 +3,7 @@ package com.appdist.app.navigation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.appdist.core.datastore.TokenManager
+import com.appdist.core.datastore.UserPreferencesStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,8 @@ sealed interface AuthState {
 
 @HiltViewModel
 class AppNavViewModel @Inject constructor(
-    tokenManager: TokenManager
+    tokenManager: TokenManager,
+    preferencesStore: UserPreferencesStore,
 ) : ViewModel() {
 
     val authState: StateFlow<AuthState> = tokenManager.isAuthenticated
@@ -27,5 +29,12 @@ class AppNavViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = AuthState.Loading
+        )
+
+    val actionZoneOnLeft: StateFlow<Boolean> = preferencesStore.actionZoneOnLeft
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = false,
         )
 }

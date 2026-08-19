@@ -2,33 +2,68 @@ package com.appdist.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val AppPrimary = Color(0xFF11857C)
-val AppOnPrimary = Color(0xFFFFFFFF)
-val AppPrimaryContainer = Color(0xFFD7F3EF)
-val AppOnPrimaryContainer = Color(0xFF073D39)
+val VolcanicGround = Color(0xFF080B0C)
+val VolcanicSurface = Color(0xFF111718)
+val VolcanicSurfaceRaised = Color(0xFF182123)
+val VolcanicAction = Color(0xFF063F47)
+val VolcanicAccent = Color(0xFF9DDDD2)
+val VolcanicInk = Color(0xFFECF1EF)
+val VolcanicMuted = Color(0xFFA9BCB8)
+val VolcanicOutline = Color(0xFF30433F)
+val VolcanicGraph = Color(0x387FA09A)
 
-val AppBackground = Color(0xFFF4F7F8)
-val AppSurface = Color(0xFFFFFFFF)
-val AppSurfaceVariant = Color(0xFFECF2F3)
-val AppOnSurface = Color(0xFF10242A)
-val AppOnSurfaceVariant = Color(0xFF60747B)
-val AppOutline = Color(0xFFCAD9DD)
-val AppOutlineVariant = Color(0xFFDCE7E9)
+// Volcanic Split revision: translucent basalt panels over the ground, so the
+// navigation graph keeps reading through the content.
+val VolcanicPanel = Color(0xCC10191A)
+val VolcanicPanelStroke = Color(0x55FFFFFF)
+val VolcanicPanelStrokeStrong = Color(0x66FFFFFF)
+val VolcanicField = Color(0x99050808)
+val VolcanicChip = Color(0xAA050808)
 
-val AppDarkPrimary = Color(0xFF67D5CA)
-val AppDarkBackground = Color(0xFF0E1719)
-val AppDarkSurface = Color(0xFF152124)
-val AppDarkSurfaceVariant = Color(0xFF213034)
-val AppDarkOnSurface = Color(0xFFE8F1F2)
-val AppDarkOnSurfaceVariant = Color(0xFFA9BDC2)
-val AppDarkOutline = Color(0xFF42575C)
+// Action zone surfaces: the seam itself is VolcanicAction, secondary controls
+// inside it sit one step deeper so the ink action tiles stay the loudest thing.
+val VolcanicRailTarget = Color(0xFF052F35)
+val VolcanicRailTargetStroke = Color(0x33FFFFFF)
+val VolcanicRailDivider = Color(0x66FFFFFF)
+val VolcanicActionPreview = Color(0xFF0C6974)
+
+val VolcanicAccentBright = Color(0xFFC9FFF5)
+val VolcanicNodeRelated = Color(0xFF376C67)
+val VolcanicNodeOutline = Color(0x777FA09A)
+
+val VolcanicInkSoft = Color(0xFFD5E0DD)
+val VolcanicMutedDim = Color(0xFF8FA7A3)
+val VolcanicGhost = Color(0x08FFFFFF)
+val VolcanicGhostLabel = Color(0x33AFC5C0)
+val VolcanicTrack = Color(0xFF263637)
+
+val AppPrimary = VolcanicAccent
+val AppOnPrimary = VolcanicGround
+val AppPrimaryContainer = VolcanicAction
+val AppOnPrimaryContainer = VolcanicInk
+
+val AppBackground = VolcanicGround
+val AppSurface = VolcanicSurface
+val AppSurfaceVariant = VolcanicSurfaceRaised
+val AppOnSurface = VolcanicInk
+val AppOnSurfaceVariant = VolcanicMuted
+val AppOutline = VolcanicOutline
+val AppOutlineVariant = VolcanicOutline
+
+val AppDarkPrimary = VolcanicAccent
+val AppDarkBackground = VolcanicGround
+val AppDarkSurface = VolcanicSurface
+val AppDarkSurfaceVariant = VolcanicSurfaceRaised
+val AppDarkOnSurface = VolcanicInk
+val AppDarkOnSurfaceVariant = VolcanicMuted
+val AppDarkOutline = VolcanicOutline
 
 // Semantic status colors (theme-independent)
-val StatusMandatory = Color(0xFFC5221F)
-val StatusMandatoryContainer = Color(0xFFFCE8E6)
-val StatusDeprecated = Color(0xFF5F6368)
-val StatusDeprecatedContainer = Color(0xFFF1F3F4)
-val StatusExpiring = Color(0xFFEA8600)
-val StatusExpiringContainer = Color(0xFFFEF7E0)
-val StatusLatest = Color(0xFF137333)
-val StatusLatestContainer = Color(0xFFE6F4EA)
+val StatusMandatory = Color(0xFFFFB4AB)
+val StatusMandatoryContainer = Color(0xFF4A1D1B)
+val StatusDeprecated = Color(0xFFCAD4D1)
+val StatusDeprecatedContainer = Color(0xFF29302F)
+val StatusExpiring = Color(0xFFFFD18A)
+val StatusExpiringContainer = Color(0xFF4A3210)
+val StatusLatest = VolcanicAccent
+val StatusLatestContainer = VolcanicAction

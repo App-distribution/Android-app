@@ -17,11 +17,16 @@ class UserPreferencesStore @Inject constructor(
 ) {
     companion object {
         private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        private val KEY_ACTION_ZONE_ON_LEFT = booleanPreferencesKey("action_zone_on_left")
         private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
     }
 
     val notificationsEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[KEY_NOTIFICATIONS_ENABLED] ?: true
+    }
+
+    val actionZoneOnLeft: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[KEY_ACTION_ZONE_ON_LEFT] ?: false
     }
 
     val themeMode: Flow<ThemeMode>
@@ -31,6 +36,10 @@ class UserPreferencesStore @Inject constructor(
 
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         dataStore.edit { it[KEY_NOTIFICATIONS_ENABLED] = enabled }
+    }
+
+    suspend fun setActionZoneOnLeft(onLeft: Boolean) {
+        dataStore.edit { it[KEY_ACTION_ZONE_ON_LEFT] = onLeft }
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {

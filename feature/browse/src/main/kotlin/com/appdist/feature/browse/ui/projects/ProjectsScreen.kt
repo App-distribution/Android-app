@@ -1,210 +1,240 @@
 package com.appdist.feature.browse.ui.projects
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.appdist.core.database.entity.BuildEntity
 import com.appdist.core.network.dto.ProjectResponse
+import com.appdist.core.ui.components.ActionCaption
+import com.appdist.core.ui.components.ActionZoneSide
 import com.appdist.core.ui.components.EmptyScreen
 import com.appdist.core.ui.components.ErrorScreen
+import com.appdist.core.ui.components.GhostNumeral
+import com.appdist.core.ui.components.GraphDestination
 import com.appdist.core.ui.components.LoadingScreen
+import com.appdist.core.ui.components.PanelDivider
+import com.appdist.core.ui.components.RailAction
+import com.appdist.core.ui.components.RailIconTarget
+import com.appdist.core.ui.components.RouteSwitcher
+import com.appdist.core.ui.components.RouteTab
+import com.appdist.core.ui.components.VolcanicCard
+import com.appdist.core.ui.components.VolcanicScaffold
+import com.appdist.core.ui.components.bottomGapAfterInsets
+import com.appdist.core.ui.theme.MonoLabel
+import com.appdist.core.ui.theme.MonoMeta
+import com.appdist.core.ui.theme.VolcanicAccent
+import com.appdist.core.ui.theme.VolcanicMuted
+import com.appdist.core.ui.theme.VolcanicPanelStroke
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectsScreen(
     onProjectClick: (ProjectResponse) -> Unit,
+    actionZoneSide: ActionZoneSide = ActionZoneSide.Right,
+    onDownloadsClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     viewModel: ProjectsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val error = state.error
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = { BrandTopBar() },
-    ) { padding ->
+    VolcanicScaffold(
+        side = actionZoneSide,
+        destination = GraphDestination.Journals,
+        zoneTop = {
+            RailIconTarget(Icons.Default.Settings, "Настройки", onSettingsClick)
+        },
+        // Журнал открывается тапом по карточке, поэтому единственное действие
+        // зоны здесь — переход к скачанным сборкам.
+        zoneAction = {
+            ActionCaption("ДЕЙСТВИЕ")
+            Spacer(Modifier.height(8.dp))
+            RailAction(
+                icon = Icons.Default.Download,
+                label = "Скачанные",
+                onClick = onDownloadsClick,
+                minHeight = 126.dp,
+            )
+        },
+    ) {
+        GhostNumeral(
+            text = journalCode(state.projects.size - 1),
+            fontSize = 152.sp,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .navigationBarsPadding()
+                .padding(start = 10.dp, bottom = 24.dp),
+        )
+
+        val header: @Composable () -> Unit = {
+            ProjectsHeader(
+                count = state.projects.size,
+                onDownloadsClick = onDownloadsClick,
+            )
+        }
+
         when {
-            state.isLoading -> LoadingScreen(modifier = Modifier.padding(padding))
-            error != null -> Column(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+            state.isLoading && state.projects.isEmpty() -> LoadingScreen(
+                Modifier
+                    .statusBarsPadding()
+                    .navigationBarsPadding(),
+            )
+            state.error != null && state.projects.isEmpty() -> Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(start = 20.dp, end = 16.dp),
             ) {
-                ProjectsHeader(
-                    modifier = Modifier.padding(top = 24.dp),
-                    showSectionLabel = false,
-                )
+                header()
                 ErrorScreen(
-                    error = error,
-                    title = "Не удалось загрузить приложения",
+                    error = state.error!!,
+                    title = "Не удалось загрузить журналы",
                     onRetry = viewModel::retry,
                     modifier = Modifier.weight(1f),
                 )
             }
-            state.projects.isEmpty() -> EmptyScreen(
-                message = "Доступных приложений пока нет",
-                modifier = Modifier.padding(padding),
-            )
-            else -> LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize().padding(padding),
+            state.projects.isEmpty() -> Column(
+                Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(start = 20.dp, end = 16.dp),
             ) {
-                item {
-                    ProjectsHeader(showSectionLabel = true)
-                }
-
-                items(state.projects, key = { it.id }) { project ->
-                    ProjectCard(project = project, onClick = { onProjectClick(project) })
-                }
+                header()
+                EmptyScreen("Журналов сборок пока нет", Modifier.weight(1f))
             }
-        }
-    }
-}
-
-@Composable
-private fun ProjectsHeader(
-    showSectionLabel: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier) {
-        Text(
-            text = "Доступные приложения",
-            style = MaterialTheme.typography.headlineSmall,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = "Выберите проект, чтобы открыть доступные сборки.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (showSectionLabel) {
-            Spacer(Modifier.height(24.dp))
-            Text(
-                text = "ПРОЕКТЫ",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun BrandTopBar() {
-    TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primary),
-                ) {
-                    Text(
-                        text = "A",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
+            else -> LazyColumn(
+                contentPadding = PaddingValues(start = 20.dp, end = 16.dp, top = 26.dp, bottom = bottomGapAfterInsets(margin = 28.dp)),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding(),
+            ) {
+                item { header() }
+                items(state.projects, key = { it.id }) { project ->
+                    ProjectJournal(
+                        project = project,
+                        latest = state.latestBuilds[project.id],
+                        onClick = { onProjectClick(project) },
                     )
                 }
-                Text(
-                    text = "AppDist",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 10.dp),
-                )
             }
-        },
-    )
-}
-
-@Composable
-private fun ProjectCard(project: ProjectResponse, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(16.dp),
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primary),
-            ) {
-                Text(
-                    text = project.initials(),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-
-            Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
-                Text(
-                    text = project.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                )
-                Text(
-                    text = project.packageName,
-                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = "Открыть сборки",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
 
-private fun ProjectResponse.initials(): String = name
-    .split(" ")
-    .filter { it.isNotBlank() }
-    .take(2)
-    .joinToString("") { it.first().uppercaseChar().toString() }
+@Composable
+private fun ProjectsHeader(count: Int, onDownloadsClick: () -> Unit) {
+    Column {
+        Text("Приложения", style = MaterialTheme.typography.displaySmall)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "ДОСТУПНО  ·  ${journalCode(count - 1)}",
+            style = MonoLabel,
+            color = VolcanicMuted,
+        )
+        RouteSwitcher(
+            tabs = listOf(
+                RouteTab("Сборки", selected = true, onClick = {}),
+                RouteTab("Скачанные", selected = false, onClick = onDownloadsClick),
+            ),
+            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+        )
+    }
+}
+
+/** Карточка — сама точка входа в журнал: тап открывает историю релизов. */
+@Composable
+private fun ProjectJournal(
+    project: ProjectResponse,
+    latest: BuildEntity?,
+    onClick: () -> Unit,
+) {
+    VolcanicCard(
+        cornerRadius = 20.dp,
+        stroke = VolcanicPanelStroke,
+        onClick = onClick,
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = project.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = VolcanicAccent,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(project.packageName, style = MonoMeta, color = VolcanicMuted, maxLines = 1)
+            Spacer(Modifier.height(16.dp))
+            PanelDivider()
+            Spacer(Modifier.height(16.dp))
+            if (latest != null) {
+                Text("LATEST BUILD", style = MonoLabel, color = VolcanicAccent)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = latest.versionName.withVersionPrefix(),
+                    style = MaterialTheme.typography.headlineSmall,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = listOf(
+                        "${latest.versionCode}",
+                        latest.environment,
+                        latest.channel,
+                    ).filter { it.isNotBlank() }.joinToString("  ·  "),
+                    style = MonoMeta,
+                    color = VolcanicMuted,
+                )
+            } else {
+                Text("ЖУРНАЛ ПУСТ", style = MonoLabel, color = VolcanicMuted)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Откройте журнал, чтобы загрузить историю релизов.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VolcanicMuted,
+                )
+            }
+        }
+    }
+}
+
+/** Порядковый код журнала в стиле макета: 01, 02, … */
+private fun journalCode(zeroBasedIndex: Int): String =
+    (zeroBasedIndex + 1).coerceAtLeast(0).toString().padStart(2, '0')
+
+private fun String.withVersionPrefix(): String = if (startsWith("v")) this else "v$this"

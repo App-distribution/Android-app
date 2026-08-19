@@ -1,41 +1,103 @@
 package com.appdist.feature.builddetail.ui
 
 import android.content.Intent
-import androidx.compose.foundation.layout.*
+import android.net.Uri
+import android.provider.Settings as AndroidSettings
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.InstallMobile
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.appdist.core.common.AppError
+import com.appdist.core.common.model.BuildUi
 import com.appdist.core.common.model.InstallStatus
-import com.appdist.core.ui.components.ErrorScreen
 import com.appdist.core.downloads.DownloadState
+import com.appdist.core.ui.components.ActionCaption
+import com.appdist.core.ui.components.ActionZoneSide
+import com.appdist.core.ui.components.ErrorScreen
+import com.appdist.core.ui.components.GhostNumeral
+import com.appdist.core.ui.components.GraphDestination
 import com.appdist.core.ui.components.LoadingScreen
-import com.appdist.feature.builddetail.ui.components.BuildHeroSection
+import com.appdist.core.ui.components.RailActionTile
+import com.appdist.core.ui.components.RailDivider
+import com.appdist.core.ui.components.RailDot
+import com.appdist.core.ui.components.RailIconTarget
+import com.appdist.core.ui.components.RailLabel
+import com.appdist.core.ui.components.RailValue
+import com.appdist.core.ui.components.VolcanicScaffold
+import com.appdist.core.ui.theme.MonoAction
+import com.appdist.core.ui.theme.MonoLabel
+import com.appdist.core.ui.theme.MonoMeta
+import com.appdist.core.ui.theme.VolcanicAccent
+import com.appdist.core.ui.theme.VolcanicAction
+import com.appdist.core.ui.theme.VolcanicInk
+import com.appdist.core.ui.theme.VolcanicMuted
+import com.appdist.core.ui.theme.VolcanicPanel
+import com.appdist.core.ui.theme.VolcanicPanelStroke
 import com.appdist.feature.builddetail.ui.components.ChangelogSection
 import com.appdist.feature.builddetail.ui.components.TechDetailsSection
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BuildDetailScreen(
     buildId: String,
     onBack: () -> Unit,
-    viewModel: BuildDetailViewModel = hiltViewModel()
+    actionZoneSide: ActionZoneSide = ActionZoneSide.Right,
+    onSettingsClick: () -> Unit = {},
+    viewModel: BuildDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    var signatureMismatch by remember { mutableStateOf<String?>(null) }
+    var downgradeWarning by remember { mutableStateOf<Pair<Long, Long>?>(null) }
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
@@ -48,49 +110,71 @@ fun BuildDetailScreen(
                     }
                     context.startActivity(intent)
                 }
-                is BuildDetailEffect.CopyToClipboard ->
+                is BuildDetailEffect.CopyToClipboard -> {
                     clipboard.setText(AnnotatedString(effect.text))
-                is BuildDetailEffect.ShowSnackbar -> { /* TODO: SnackbarHostState */ }
-                is BuildDetailEffect.ShowSignatureMismatchDialog -> { /* TODO: show dialog */ }
-                is BuildDetailEffect.ShowDowngradeWarning -> { /* TODO: show dialog */ }
+                    snackbarHostState.showSnackbar("Ссылка скопирована")
+                }
+                is BuildDetailEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is BuildDetailEffect.ShowSignatureMismatchDialog -> {
+                    signatureMismatch = effect.installedFp
+                }
+                is BuildDetailEffect.ShowDowngradeWarning -> {
+                    downgradeWarning = effect.installedCode to effect.newCode
+                }
             }
         }
     }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-                title = { Text("Сборка", style = MaterialTheme.typography.titleMedium) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.onAction(BuildDetailAction.CopyLinkClicked) }) {
-                        Icon(Icons.Default.Share, "Copy link")
-                    }
+    val build = state.build
+    val downloading = state.downloadState as? DownloadState.Downloading
+
+    VolcanicScaffold(
+        side = actionZoneSide,
+        destination = GraphDestination.BuildDetail,
+        zoneTop = {
+            RailIconTarget(Icons.Default.Settings, "Настройки", onSettingsClick)
+            if (build != null) {
+                Spacer(Modifier.height(22.dp))
+                Text(
+                    text = build.versionName.versionTail(),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = VolcanicInk,
+                )
+                Spacer(Modifier.height(18.dp))
+                if (build.isLatestInChannel) {
+                    RailLabel("LATEST")
+                    Spacer(Modifier.height(8.dp))
+                    RailDot()
+                    Spacer(Modifier.height(16.dp))
                 }
-            )
+                RailLabel(build.channel.uppercase())
+                Spacer(Modifier.height(6.dp))
+                RailLabel(build.environment.uppercase())
+                Spacer(Modifier.height(12.dp))
+                RailDivider()
+                Spacer(Modifier.height(12.dp))
+                RailValue("APK\n${build.fileSize / 1024 / 1024} MB")
+            }
         },
-        bottomBar = {
-            state.build?.let { build ->
-                StickyInstallBar(
+        zoneAction = {
+            ActionCaption(if (downloading != null) "ЗАГРУЗКА" else "ДЕЙСТВИЕ")
+            Spacer(Modifier.height(8.dp))
+            if (build != null) {
+                InstallAction(
                     build = build,
                     downloadState = state.downloadState,
-                    onAction = viewModel::onAction
+                    onAction = viewModel::onAction,
                 )
             }
-        }
-    ) { padding ->
-        val build = state.build
+        },
+    ) {
         val error = state.error
         when {
-            state.isLoading -> LoadingScreen(modifier = Modifier.padding(padding))
+            state.isLoading -> LoadingScreen(
+                Modifier
+                    .statusBarsPadding()
+                    .navigationBarsPadding(),
+            )
             error != null -> ErrorScreen(
                 error = error,
                 title = "Не удалось загрузить сборку",
@@ -98,81 +182,262 @@ fun BuildDetailScreen(
                     "Сервер не вернул данные этой сборки. Попробуйте ещё раз."
                 } else null,
                 onRetry = { viewModel.onAction(BuildDetailAction.RetryClicked) },
-                modifier = Modifier.padding(padding)
+                modifier = Modifier
+                    .statusBarsPadding()
+                    .navigationBarsPadding(),
             )
-            build != null -> Column(
-                Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
-            ) {
-                BuildHeroSection(
-                    build = build,
-                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp),
+            build != null -> {
+                GhostNumeral(
+                    text = "${build.versionCode}",
+                    fontSize = 130.sp,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .navigationBarsPadding()
+                        .padding(start = 8.dp, bottom = 20.dp),
                 )
-                val changelog = build.changelog
-                if (!changelog.isNullOrBlank()) {
-                    ChangelogSection(
-                        changelog = changelog,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 28.dp),
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    BuildDetailTopBar(
+                        projectName = build.projectName,
+                        onBack = onBack,
+                        onCopyLink = { viewModel.onAction(BuildDetailAction.CopyLinkClicked) },
                     )
+                    Column(Modifier.padding(start = 20.dp, end = 16.dp)) {
+                        Text(
+                            text = build.versionName.versionHead(),
+                            style = MaterialTheme.typography.displayMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            text = listOfNotNull(
+                                "BUILD ${build.versionCode}",
+                                build.branch?.takeIf { it.isNotBlank() }?.let { "BR:$it" },
+                            ).joinToString("  ·  "),
+                            style = MonoLabel,
+                            color = VolcanicMuted,
+                        )
+                        if (!build.changelog.isNullOrBlank()) {
+                            ChangelogSection(
+                                changelog = build.changelog.orEmpty(),
+                                uploadDate = build.uploadDate,
+                                fileSize = build.fileSize,
+                                modifier = Modifier.padding(top = 26.dp),
+                            )
+                        }
+                        TechDetailsSection(build = build, modifier = Modifier.padding(top = 18.dp))
+                        Spacer(Modifier.height(34.dp))
+                    }
                 }
-                TechDetailsSection(
-                    build = build,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp),
-                )
-                Spacer(Modifier.height(80.dp))
             }
         }
+        SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
+    }
+
+    signatureMismatch?.let { fingerprint ->
+        BlockingInstallDialog(
+            title = "Подпись приложения отличается",
+            message = "Установленная версия подписана другим сертификатом (${fingerprint.take(12)}…). Удалите её в настройках Android, затем повторите установку.",
+            onDismiss = { signatureMismatch = null },
+            onOpenSettings = {
+                signatureMismatch = null
+                state.build?.packageName?.let { context.openAppSettings(it) }
+            },
+        )
+    }
+    downgradeWarning?.let { (installedCode, newCode) ->
+        BlockingInstallDialog(
+            title = "Нужен откат версии",
+            message = "На устройстве установлена сборка #$installedCode, а выбрана #$newCode. Удалите текущую версию в настройках Android и вернитесь к установке.",
+            onDismiss = { downgradeWarning = null },
+            onOpenSettings = {
+                downgradeWarning = null
+                state.build?.packageName?.let { context.openAppSettings(it) }
+            },
+        )
     }
 }
 
 @Composable
-private fun StickyInstallBar(
-    build: com.appdist.core.common.model.BuildUi,
-    downloadState: DownloadState,
-    onAction: (BuildDetailAction) -> Unit
+private fun BuildDetailTopBar(
+    projectName: String,
+    onBack: () -> Unit,
+    onCopyLink: () -> Unit,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 8.dp,
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp)
+            .padding(start = 8.dp, end = 12.dp),
     ) {
-        Column(Modifier.padding(16.dp)) {
-            if (downloadState is DownloadState.Downloading) {
-                LinearProgressIndicator(
-                    progress = { downloadState.progress },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                )
-                Text(
-                    "${downloadState.bytesLoaded / 1024 / 1024} MB скачано",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(Modifier.height(4.dp))
-            }
-
-            val (buttonText, enabled) = when {
-                downloadState is DownloadState.Downloading -> "Отмена" to true
-                downloadState is DownloadState.Verifying -> "Проверка..." to false
-                downloadState is DownloadState.ReadyToInstall -> "Установить" to true
-                build.installStatus is InstallStatus.NotInstalled -> "Скачать и установить" to true
-                build.installStatus is InstallStatus.UpdateAvailable -> "Обновить до v${build.versionName}" to true
-                build.installStatus is InstallStatus.Installed -> "Установлена актуальная версия" to false
-                build.installStatus is InstallStatus.InstalledNewer -> "Откатить до v${build.versionName}" to true
-                build.installStatus is InstallStatus.Incompatible -> "Несовместимо с устройством" to false
-                build.installStatus is InstallStatus.SignatureMismatch -> "Другая подпись — установить?" to true
-                else -> "Скачать" to true
-            }
-
-            Button(
-                onClick = {
-                    if (downloadState is DownloadState.Downloading)
-                        onAction(BuildDetailAction.CancelDownload)
-                    else
-                        onAction(BuildDetailAction.DownloadOrInstallClicked)
-                },
-                enabled = enabled,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) {
-                Text(buttonText, style = MaterialTheme.typography.labelLarge)
-            }
-        }
+        PanelIconTarget(
+            icon = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Назад",
+            onClick = onBack,
+        )
+        Text(
+            text = projectName,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        PanelIconTarget(
+            icon = Icons.Default.Share,
+            contentDescription = "Скопировать ссылку",
+            onClick = onCopyLink,
+        )
     }
+}
+
+@Composable
+private fun PanelIconTarget(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(16.dp)
+    Box(
+        Modifier
+            .size(48.dp)
+            .background(VolcanicPanel, shape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(22.dp))
+    }
+}
+
+@Composable
+private fun BlockingInstallDialog(
+    title: String,
+    message: String,
+    onDismiss: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(message) },
+        confirmButton = {
+            TextButton(onClick = onOpenSettings) { Text("Открыть настройки") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Отмена") }
+        },
+    )
+}
+
+private fun android.content.Context.openAppSettings(packageName: String) {
+    startActivity(
+        Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.parse("package:$packageName")
+        }
+    )
+}
+
+/**
+ * Основное действие живёт в action-зоне и остаётся одной плиткой во всех
+ * состояниях: скачать, прогресс с отменой, проверка, установка.
+ */
+@Composable
+private fun InstallAction(
+    build: BuildUi,
+    downloadState: DownloadState,
+    onAction: (BuildDetailAction) -> Unit,
+) {
+    val downloading = downloadState as? DownloadState.Downloading
+    val enabled = when {
+        downloadState is DownloadState.Verifying -> false
+        build.installStatus is InstallStatus.Installed && downloadState !is DownloadState.ReadyToInstall -> false
+        build.installStatus is InstallStatus.Incompatible -> false
+        else -> true
+    }
+    val label = when {
+        downloading != null -> "Отменить"
+        downloadState is DownloadState.Verifying -> "Проверка"
+        downloadState is DownloadState.ReadyToInstall -> "Установить"
+        build.installStatus is InstallStatus.UpdateAvailable -> "Обновить"
+        build.installStatus is InstallStatus.Installed -> "Готово"
+        build.installStatus is InstallStatus.InstalledNewer -> "Откатить"
+        build.installStatus is InstallStatus.Incompatible -> "Недоступно"
+        else -> "Скачать\nи установить"
+    }
+    val icon = when {
+        downloading != null -> Icons.Default.Cancel
+        downloadState is DownloadState.ReadyToInstall -> Icons.Default.InstallMobile
+        build.installStatus is InstallStatus.Installed -> Icons.Default.CheckCircle
+        else -> Icons.Default.Download
+    }
+
+    RailActionTile(
+        onClick = {
+            if (downloading != null) onAction(BuildDetailAction.CancelDownload)
+            else onAction(BuildDetailAction.DownloadOrInstallClicked)
+        },
+        enabled = enabled,
+        contentDescription = label.replace("\n", " "),
+        minHeight = 168.dp,
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+        if (downloading != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "${(downloading.progress * 100).toInt()}%",
+                style = MaterialTheme.typography.titleLarge,
+            )
+            Spacer(Modifier.height(6.dp))
+            Box(
+                Modifier
+                    .width(52.dp)
+                    .height(6.dp)
+                    .background(VolcanicAction.copy(alpha = .2f), RoundedCornerShape(3.dp)),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(downloading.progress.coerceIn(0f, 1f))
+                        .height(6.dp)
+                        .background(VolcanicAction, RoundedCornerShape(3.dp)),
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "${formatMb(downloading.bytesLoaded)} / ${formatMb(build.fileSize)}",
+                style = MonoMeta,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+            )
+            Spacer(Modifier.height(6.dp))
+        } else {
+            Spacer(Modifier.height(10.dp))
+        }
+        Text(
+            text = label.uppercase(),
+            style = MonoAction,
+            textAlign = TextAlign.Center,
+            maxLines = 3,
+        )
+    }
+}
+
+private fun formatMb(bytes: Long): String = "${bytes / 1024 / 1024} МБ"
+
+/** Версия разрезается по последней точке: голова в контенте, хвост в зоне. */
+private fun String.versionHead(): String {
+    val normalized = if (startsWith("v")) this else "v$this"
+    val cut = normalized.lastIndexOf('.')
+    return if (cut > 0) normalized.substring(0, cut) else normalized
+}
+
+private fun String.versionTail(): String {
+    val cut = lastIndexOf('.')
+    return if (cut > 0) substring(cut) else ""
 }

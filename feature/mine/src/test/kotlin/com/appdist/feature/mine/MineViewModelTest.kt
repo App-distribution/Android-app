@@ -1,5 +1,6 @@
 package com.appdist.feature.mine
 
+import android.content.Context
 import app.cash.turbine.test
 import com.appdist.core.database.dao.BuildDao
 import com.appdist.core.database.dao.DownloadDao
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test
 class MineViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
+    private lateinit var context: Context
     private lateinit var installHistoryDao: InstallHistoryDao
     private lateinit var downloadDao: DownloadDao
     private lateinit var buildDao: BuildDao
@@ -44,6 +46,7 @@ class MineViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        context = mockk(relaxed = true)
         installHistoryDao = mockk()
         downloadDao = mockk()
         buildDao = mockk()
@@ -58,7 +61,7 @@ class MineViewModelTest {
     fun tearDown() { Dispatchers.resetMain() }
 
     private fun createViewModel() =
-        MineViewModel(installHistoryDao, downloadDao, buildDao, downloadRepository)
+        MineViewModel(context, installHistoryDao, downloadDao, buildDao, downloadRepository)
 
     @Test
     fun `combines install history and active downloads`() = runTest {

@@ -94,7 +94,7 @@ fun ErrorScreen(
                 onClick = onRetry,
                 shape = RoundedCornerShape(10.dp),
                 contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                modifier = Modifier.height(44.dp),
+                modifier = Modifier.height(48.dp),
             ) {
                 Icon(
                     imageVector = Icons.Default.Refresh,
