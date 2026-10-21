@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -160,8 +161,10 @@ fun BuildDetailScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             if (build.isLatestInChannel) LedgerBadge("latest", selected = true)
-                            LedgerBadge(build.channel.ifBlank { "QA" })
-                            LedgerBadge(build.environment.ifBlank { "internal" })
+                            // Вид и стенд; у старых сборок без них — прежнее окружение.
+                            val tags = listOfNotNull(build.flavor, build.stand)
+                            if (tags.isNotEmpty()) tags.forEach { LedgerBadge(it) }
+                            else LedgerBadge(build.environment.ifBlank { "internal" })
                         }
                         if (!build.changelog.isNullOrBlank()) {
                             ChangelogSection(
@@ -176,14 +179,26 @@ fun BuildDetailScreen(
                     }
                 }
 
-                InstallAction(
-                    build = build,
-                    downloadState = state.downloadState,
-                    onAction = viewModel::onAction,
-                    modifier = Modifier
+                // Подложка под кнопкой: без неё длинное описание при прокрутке
+                // просвечивало сквозь подпись «APK · 70 МБ».
+                Box(
+                    Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(horizontal = 20.dp, vertical = 12.dp),
-                )
+                        .fillMaxWidth()
+                        .background(
+                            Brush.verticalGradient(
+                                0f to AppTheme.colors.ground.copy(alpha = 0f),
+                                0.25f to AppTheme.colors.ground,
+                            )
+                        )
+                        .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 12.dp),
+                ) {
+                    InstallAction(
+                        build = build,
+                        downloadState = state.downloadState,
+                        onAction = viewModel::onAction,
+                    )
+                }
             }
         }
         SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))

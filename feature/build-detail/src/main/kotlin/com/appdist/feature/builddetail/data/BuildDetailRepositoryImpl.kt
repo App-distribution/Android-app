@@ -65,6 +65,7 @@ class BuildDetailRepositoryImpl @Inject constructor(
         minSdk = minSdk, targetSdk = targetSdk, certFingerprint = certFingerprint,
         abis = abis ?: emptyList(), expiryDate = expiryDate,
         branch = branch, commitHash = commitHash,
-        installStatus = InstallStatus.NotInstalled
+        installStatus = InstallStatus.NotInstalled,
+        flavor = flavor, stand = stand,
     )
 }
