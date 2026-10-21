@@ -1,5 +1,8 @@
 package com.appdist.feature.browse.ui.builds
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings as AndroidSettings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -10,31 +13,42 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.InstallMobile
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,27 +58,19 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.appdist.core.common.AppError
 import com.appdist.core.common.model.BuildUi
+import com.appdist.core.common.model.InstallStatus
 import com.appdist.core.common.toAppError
-import com.appdist.core.ui.components.ActionCaption
+import com.appdist.core.downloads.DownloadState
 import com.appdist.core.ui.components.ActionZoneSide
 import com.appdist.core.ui.components.EmptyScreen
 import com.appdist.core.ui.components.ErrorScreen
-import com.appdist.core.ui.components.GhostLabel
-import com.appdist.core.ui.components.GhostNumeral
-import com.appdist.core.ui.components.GraphDestination
+import com.appdist.core.ui.components.LedgerCard
+import com.appdist.core.ui.components.LedgerPrimaryButton
+import com.appdist.core.ui.components.LedgerScreen
+import com.appdist.core.ui.components.LedgerTopBar
 import com.appdist.core.ui.components.LoadingScreen
-import com.appdist.core.ui.components.RailAction
-import com.appdist.core.ui.components.RailDivider
-import com.appdist.core.ui.components.RailDot
-import com.appdist.core.ui.components.RailIconTarget
-import com.appdist.core.ui.components.RailLabel
-import com.appdist.core.ui.components.RailValue
-import com.appdist.core.ui.components.VolcanicScaffold
-import com.appdist.core.ui.components.bottomGapAfterInsets
 import com.appdist.core.ui.theme.AppTheme
-import com.appdist.core.ui.theme.MonoLabel
 import com.appdist.core.ui.theme.MonoMeta
-import com.appdist.core.ui.theme.MonoValue
 import com.appdist.feature.browse.ui.builds.components.BuildCard
 import com.appdist.feature.browse.ui.builds.components.FilterChipsRow
 import com.appdist.feature.browse.ui.builds.components.rememberUploadDate
@@ -83,77 +89,57 @@ fun BuildsScreen(
     viewModel: BuildsViewModel = hiltViewModel(),
 ) {
     val filters by viewModel.filters.collectAsStateWithLifecycle()
+    val latestInstallState by viewModel.latestInstallState.collectAsStateWithLifecycle()
     val builds = viewModel.builds.collectAsLazyPagingItems()
     var searchText by remember { mutableStateOf("") }
-    val latest = builds.itemSnapshotList.items.firstOrNull()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    var signatureMismatch by remember { mutableStateOf<String?>(null) }
+    var downgradeWarning by remember { mutableStateOf<Pair<Long, Long>?>(null) }
 
-    VolcanicScaffold(
-        side = actionZoneSide,
-        destination = GraphDestination.Builds,
-        zoneTop = {
-            RailIconTarget(Icons.Default.Settings, "Настройки", onSettingsClick)
-            if (latest != null) {
-                Spacer(Modifier.height(22.dp))
-                RailLabel("LATEST")
-                Spacer(Modifier.height(8.dp))
-                RailDot()
-                Spacer(Modifier.height(16.dp))
-                RailLabel(latest.channel.uppercase())
-                Spacer(Modifier.height(10.dp))
-                RailDivider()
-                Spacer(Modifier.height(10.dp))
-                RailLabel(latest.environment.uppercase())
-                Spacer(Modifier.height(14.dp))
-                RailValue("${latest.fileSize / 1024 / 1024}\nMB")
-            }
-        },
-        zoneAction = {
-            ActionCaption("ДЕЙСТВИЕ")
-            Spacer(Modifier.height(8.dp))
-            RailAction(
-                icon = Icons.AutoMirrored.Filled.ArrowForward,
-                label = "Открыть",
-                enabled = latest != null,
-                onClick = { latest?.let { onBuildClick(it.id) } },
-            )
-        },
-    ) {
-        if (latest != null) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .navigationBarsPadding()
-                    .padding(start = 12.dp, bottom = 20.dp),
-            ) {
-                GhostNumeral("${latest.versionCode}")
-                GhostLabel(
-                    "BUILD ${latest.versionCode}",
-                    color = AppTheme.colors.ghostLabel,
-                    modifier = Modifier.padding(start = 8.dp, top = 4.dp),
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is BuildsEffect.LaunchInstaller -> context.startActivity(
+                    Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(effect.apkUri, "application/vnd.android.package-archive")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
                 )
-                latest.branch?.takeIf { it.isNotBlank() }?.let { branch ->
-                    GhostLabel(
-                        "BR:$branch / APK",
-                        color = AppTheme.colors.ghostLabel,
-                        modifier = Modifier.padding(start = 8.dp, top = 4.dp),
-                    )
+                is BuildsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is BuildsEffect.ShowSignatureMismatchDialog -> signatureMismatch = effect.installedFp
+                is BuildsEffect.ShowDowngradeWarning -> {
+                    downgradeWarning = effect.installedCode to effect.newCode
                 }
             }
         }
+    }
 
+    LedgerScreen {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding(),
+                .statusBarsPadding(),
         ) {
-            BuildsTopBar(projectName = projectName, onBack = onBack)
-
-            Column(Modifier.padding(start = 20.dp, end = 16.dp)) {
+            LedgerTopBar(
+                title = projectName.ifBlank { "Журнал приложения" },
+                leadingIcon = Icons.AutoMirrored.Filled.ArrowBack,
+                leadingDescription = "Назад",
+                onLeadingClick = onBack,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+            Column(Modifier.padding(horizontal = 20.dp)) {
                 Text("Сборки", style = MaterialTheme.typography.displaySmall)
                 if (packageName.isNotBlank()) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(packageName, style = MonoMeta, color = AppTheme.colors.inkSoft)
+                    Text(
+                        packageName,
+                        style = MonoMeta,
+                        color = AppTheme.colors.muted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
                 }
                 Spacer(Modifier.height(14.dp))
                 SearchField(
@@ -174,8 +160,7 @@ fun BuildsScreen(
             when {
                 builds.loadState.refresh is LoadState.Loading -> LoadingScreen(Modifier.weight(1f))
                 builds.loadState.refresh is LoadState.Error -> {
-                    val error = (builds.loadState.refresh as LoadState.Error).error
-                    val appError = error.toAppError()
+                    val appError = (builds.loadState.refresh as LoadState.Error).error.toAppError()
                     ErrorScreen(
                         error = appError,
                         title = "Не удалось загрузить сборки",
@@ -188,135 +173,327 @@ fun BuildsScreen(
                 }
                 builds.itemCount == 0 -> EmptyScreen("Сборок не найдено", Modifier.weight(1f))
                 else -> LazyColumn(
-                    contentPadding = PaddingValues(start = 20.dp, end = 16.dp, top = 20.dp, bottom = bottomGapAfterInsets(margin = 28.dp)),
                     modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 28.dp),
                 ) {
-                    items(builds.itemCount) { index ->
-                        builds[index]?.let { build ->
-                            when (index) {
-                                0 -> LatestBuildHero(
-                                    build = build,
-                                    onClick = { onBuildClick(build.id) },
-                                )
-                                1 -> Text(
-                                    "Предыдущие",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    modifier = Modifier.padding(top = 30.dp, bottom = 14.dp),
-                                )
-                                else -> Unit
+                    item {
+                        builds[0]?.let { build ->
+                            LaunchedEffect(build.id, projectName, packageName) {
+                                viewModel.setLatestBuild(build, projectName, packageName)
                             }
-                            if (index > 0) {
-                                BuildCard(
-                                    build = build,
-                                    onClick = { onBuildClick(build.id) },
-                                    modifier = Modifier.padding(bottom = 10.dp),
-                                )
+                            val actionableBuild = latestInstallState.build
+                                ?.takeIf { it.id == build.id }
+                                ?: build.copy(projectName = projectName, packageName = packageName)
+                            val downloadState = if (latestInstallState.build?.id == build.id) {
+                                latestInstallState.downloadState
+                            } else {
+                                DownloadState.Idle
+                            }
+                            LatestBuildCard(
+                                build = actionableBuild,
+                                downloadState = downloadState,
+                                onOpen = { onBuildClick(build.id) },
+                                onInstall = viewModel::onLatestInstallClick,
+                            )
+                        }
+                    }
+                    if (builds.itemCount > 1) {
+                        item {
+                            Text(
+                                "Предыдущие",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 18.sp,
+                                    lineHeight = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                                color = AppTheme.colors.ink,
+                                modifier = Modifier.padding(top = 26.dp, bottom = 16.dp),
+                            )
+                        }
+                        items(builds.itemCount - 1) { historyIndex ->
+                            builds[historyIndex + 1]?.let { build ->
+                                BuildCard(build = build, onClick = { onBuildClick(build.id) })
                             }
                         }
                     }
                     if (builds.loadState.append is LoadState.Loading) {
-                        item { LoadingScreen(Modifier.height(76.dp)) }
+                        item { LoadingScreen(Modifier.height(72.dp)) }
                     }
                 }
             }
         }
+        SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
+    }
+
+    signatureMismatch?.let { fingerprint ->
+        BlockingInstallDialog(
+            title = "Подпись приложения отличается",
+            message = "Установленная версия подписана другим сертификатом (" +
+                fingerprint.take(12) + "…). Удалите её в настройках Android, затем повторите установку.",
+            onDismiss = { signatureMismatch = null },
+            onOpenSettings = {
+                signatureMismatch = null
+                latestInstallState.build?.packageName?.let { context.openAppSettings(it) }
+            },
+        )
+    }
+    downgradeWarning?.let { warning ->
+        BlockingInstallDialog(
+            title = "Нужен откат версии",
+            message = "На устройстве установлена сборка #" + warning.first +
+                ", а выбрана #" + warning.second +
+                ". Удалите текущую версию в настройках Android и вернитесь к установке.",
+            onDismiss = { downgradeWarning = null },
+            onOpenSettings = {
+                downgradeWarning = null
+                latestInstallState.build?.packageName?.let { context.openAppSettings(it) }
+            },
+        )
     }
 }
 
 @Composable
-private fun BuildsTopBar(projectName: String, onBack: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(horizontal = 12.dp),
+private fun LatestBuildCard(
+    build: BuildUi,
+    downloadState: DownloadState,
+    onOpen: () -> Unit,
+    onInstall: () -> Unit,
+) {
+    val date = rememberUploadDate(build.uploadDate)
+    LedgerCard(
+        highlighted = true,
+        onClick = onOpen,
+        modifier = Modifier.height(236.dp),
     ) {
+        Box(Modifier.fillMaxSize()) {
+            Text(
+                "Последняя сборка",
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                color = AppTheme.colors.highlightInk,
+                modifier = Modifier.offset(x = 18.dp, y = 18.dp),
+            )
+            BuildEnvironmentBadge(
+                label = build.environment.ifBlank { "QA" },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-18).dp, y = 14.dp),
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .offset(y = 56.dp)
+                    .padding(horizontal = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    build.versionName.withVersionPrefix(),
+                    style = MaterialTheme.typography.displayMedium.copy(
+                        fontSize = 40.sp,
+                        lineHeight = 48.sp,
+                        letterSpacing = (-1.4).sp,
+                    ),
+                    color = AppTheme.colors.ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    "build ${build.versionCode}",
+                    style = MonoMeta.copy(fontSize = 13.sp, lineHeight = 18.sp),
+                    color = AppTheme.colors.inkSoft,
+                )
+            }
+            build.changelog?.takeIf { it.isNotBlank() }?.let { changelog ->
+                Text(
+                    changelog,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = AppTheme.colors.ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(x = 18.dp, y = 112.dp)
+                        .padding(end = 36.dp),
+                )
+            }
+            Text(
+                listOfNotNull(
+                    date,
+                    "${build.fileSize / 1024 / 1024} MB",
+                    build.channel.takeIf { it.isNotBlank() }?.lowercase(),
+                ).joinToString("  •  "),
+                style = MaterialTheme.typography.bodySmall,
+                color = AppTheme.colors.muted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .offset(x = 18.dp, y = 138.dp)
+                    .padding(end = 36.dp),
+            )
+            LatestBuildInstallAction(
+                build = build,
+                downloadState = downloadState,
+                onClick = onInstall,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 18.dp, end = 18.dp, bottom = 14.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun LatestBuildInstallAction(
+    build: BuildUi,
+    downloadState: DownloadState,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val downloading = downloadState as? DownloadState.Downloading
+    if (downloading != null) {
+        val progress = downloading.progress.coerceIn(0f, 1f)
+        val shape = RoundedCornerShape(6.dp)
         Box(
-            Modifier
-                .size(48.dp)
-                .clickable(onClick = onBack),
+            modifier = modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .clip(shape)
+                .background(AppTheme.colors.surface)
+                .border(1.dp, AppTheme.colors.panelStrokeStrong, shape)
+                .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+            Box(
+                Modifier
+                    .align(Alignment.CenterStart)
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .background(AppTheme.colors.progress),
+            )
+            Text(
+                "Загрузка · ${(progress * 100).toInt()}%",
+                style = MaterialTheme.typography.labelLarge,
+                color = AppTheme.colors.ink,
+            )
         }
-        Text(
-            text = projectName.ifBlank { "Журнал приложения" },
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        return
     }
+
+    val enabled = when {
+        downloadState is DownloadState.Verifying -> false
+        build.installStatus is InstallStatus.Installed &&
+            downloadState !is DownloadState.ReadyToInstall -> false
+        build.installStatus is InstallStatus.Incompatible -> false
+        else -> true
+    }
+    val label = when {
+        downloadState is DownloadState.Verifying -> "Проверка"
+        downloadState is DownloadState.ReadyToInstall -> "Установить"
+        downloadState is DownloadState.Failed -> "Повторить"
+        build.installStatus is InstallStatus.UpdateAvailable -> "Обновить"
+        build.installStatus is InstallStatus.Installed -> "Установлено"
+        build.installStatus is InstallStatus.InstalledNewer -> "Откатить"
+        build.installStatus is InstallStatus.Incompatible -> "Недоступно"
+        else -> "Установить"
+    }
+    val icon = when {
+        downloadState is DownloadState.ReadyToInstall -> Icons.Default.InstallMobile
+        build.installStatus is InstallStatus.Installed -> Icons.Default.CheckCircle
+        else -> Icons.Default.Download
+    }
+    LedgerPrimaryButton(
+        label = label,
+        icon = icon,
+        enabled = enabled,
+        height = 48.dp,
+        onClick = onClick,
+        modifier = modifier,
+    )
 }
 
-/**
- * Новейшая сборка получает крупную подачу прямо на грунте: версия, номер и
- * сжатые метаданные видны до открытия деталей.
- */
 @Composable
-private fun LatestBuildHero(build: BuildUi, onClick: () -> Unit) {
-    val date = rememberUploadDate(build.uploadDate)
-    Column(Modifier.clickable(onClick = onClick)) {
-        Text(
-            text = build.versionName.withVersionPrefix(),
-            style = MaterialTheme.typography.displaySmall.copy(fontSize = 42.sp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text("build ${build.versionCode}", style = MonoValue, color = AppTheme.colors.ink)
-        Spacer(Modifier.height(10.dp))
-        build.changelog?.takeIf { it.isNotBlank() }?.let { changelog ->
-            Text(
-                text = changelog,
-                style = MaterialTheme.typography.bodyMedium,
-                color = AppTheme.colors.inkSoft,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(4.dp))
+private fun BlockingInstallDialog(
+    title: String,
+    message: String,
+    onDismiss: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(message) },
+        confirmButton = {
+            TextButton(onClick = onOpenSettings) { Text("Открыть настройки") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Отмена") }
+        },
+    )
+}
+
+private fun android.content.Context.openAppSettings(packageName: String) {
+    startActivity(
+        Intent(AndroidSettings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.parse("package:$packageName")
         }
+    )
+}
+
+@Composable
+private fun BuildEnvironmentBadge(label: String, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(6.dp)
+    Box(
+        modifier = modifier
+            .height(28.dp)
+            .widthIn(min = 40.dp)
+            .background(AppTheme.colors.surface, shape)
+            .border(1.dp, AppTheme.colors.badgeStroke, shape)
+            .padding(horizontal = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
         Text(
-            text = listOfNotNull(
-                date.uppercase(),
-                "${build.fileSize / 1024 / 1024} MB",
-                build.branch?.takeIf { it.isNotBlank() }?.let { "BR:$it" },
-            ).joinToString("  ·  "),
-            style = MonoMeta,
-            color = AppTheme.colors.inkSoft,
+            label.uppercase(),
+            style = MonoMeta.copy(fontSize = 11.sp, lineHeight = 14.sp),
+            color = AppTheme.colors.highlightInk,
+            maxLines = 1,
         )
     }
 }
 
 @Composable
 private fun SearchField(value: String, onValueChange: (String) -> Unit) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(6.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
             .height(48.dp)
             .background(AppTheme.colors.field, shape)
             .border(1.dp, AppTheme.colors.panelStroke, shape)
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 14.dp),
     ) {
-        Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp))
+        Icon(
+            Icons.Default.Search,
+            contentDescription = null,
+            tint = AppTheme.colors.muted,
+            modifier = Modifier.size(20.dp),
+        )
         Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (value.isEmpty()) {
-                Text(
-                    "Версия или ветка",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AppTheme.colors.mutedDim,
-                )
+                Text("Найти сборку", style = MaterialTheme.typography.bodyMedium, color = AppTheme.colors.muted)
             }
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = AppTheme.colors.ink),
-                cursorBrush = SolidColor(AppTheme.colors.accent),
+                cursorBrush = SolidColor(AppTheme.colors.ink),
                 modifier = Modifier.fillMaxWidth(),
             )
         }

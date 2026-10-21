@@ -4,12 +4,13 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.appdist.core.common.BackendException
 import com.appdist.core.common.model.BuildUi
+import com.appdist.core.database.dao.BuildDao
 import com.appdist.core.network.ApiService
-import com.appdist.core.network.dto.BuildResponse
 import com.appdist.feature.browse.ui.builds.BuildFilters
 
 class BuildsPagingSource(
     private val api: ApiService,
+    private val buildDao: BuildDao,
     private val projectId: String,
     private val filters: BuildFilters
 ) : PagingSource<Int, BuildUi>() {
@@ -32,7 +33,9 @@ class BuildsPagingSource(
                 limit = params.loadSize
             )
             if (response.isSuccessful) {
-                val items = response.body()?.map { it.toUi() } ?: emptyList()
+                val body = response.body().orEmpty()
+                if (body.isNotEmpty()) buildDao.upsertBuilds(body.map { it.toEntity() })
+                val items = body.map { it.toUi() }
                 LoadResult.Page(
                     data = items,
                     prevKey = if (page == 0) null else page - 1,

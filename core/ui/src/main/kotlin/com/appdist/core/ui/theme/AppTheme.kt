@@ -15,9 +15,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 internal fun AppColors.toColorScheme(darkTheme: Boolean): ColorScheme {
     val base = if (darkTheme) darkColorScheme() else lightColorScheme()
     return base.copy(
-        primary = accent,
-        onPrimary = ground,
-        primaryContainer = action,
+        primary = actionTile,
+        onPrimary = onActionTile,
+        primaryContainer = accentBright,
         onPrimaryContainer = ink,
         secondaryContainer = surfaceRaised,
         onSecondaryContainer = ink,

@@ -43,7 +43,7 @@ import com.appdist.core.ui.theme.MonoValue
 @Composable
 fun VolcanicCard(
     modifier: Modifier = Modifier,
-    cornerRadius: Dp = 18.dp,
+    cornerRadius: Dp = 6.dp,
     fill: Color = AppTheme.colors.panel,
     stroke: Color = AppTheme.colors.panelStroke,
     onClick: (() -> Unit)? = null,
@@ -165,7 +165,7 @@ fun StorageBar(fraction: Float, modifier: Modifier = Modifier) {
                 Modifier
                     .fillMaxWidth(filled)
                     .height(8.dp)
-                    .background(AppTheme.colors.accent, RoundedCornerShape(4.dp)),
+                    .background(AppTheme.colors.progress, RoundedCornerShape(4.dp)),
             )
         }
     }

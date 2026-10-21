@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface BuildRepository {
     fun getBuilds(projectId: String, filters: BuildFilters): Flow<PagingData<BuildUi>>
+    suspend fun refreshLatestBuilds(projectIds: Collection<String>): Result<Unit>
     suspend fun getBuild(buildId: String): Result<BuildUi>
     suspend fun getDownloadUrl(buildId: String): Result<String>
 }

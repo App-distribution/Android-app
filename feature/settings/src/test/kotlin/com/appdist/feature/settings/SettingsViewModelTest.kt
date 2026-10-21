@@ -40,9 +40,8 @@ class SettingsViewModelTest {
         every { prefsStore.themeMode } returns flowOf(ThemeMode.LIGHT)
         val viewModel = SettingsViewModel(prefsStore)
         viewModel.state.test {
-            // WhileSubscribed(5_000) стартует апстрим только по первой подписке:
-            // первый элемент — ещё дефолт из stateIn, второй — уже из хранилища.
-            skipItems(1)
+            // Светлая тема теперь является и продуктовым дефолтом, и сохранённым
+            // значением, поэтому StateFlow не обязан эмитить одинаковое состояние дважды.
             assertEquals(ThemeMode.LIGHT, awaitItem().themeMode)
             cancelAndIgnoreRemainingEvents()
         }

@@ -30,7 +30,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.appdist.core.common.model.BuildUi
 import com.appdist.core.ui.components.MetaRow
-import com.appdist.core.ui.components.VolcanicCard
+import com.appdist.core.ui.components.LedgerCard
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -46,13 +46,13 @@ fun TechDetailsSection(build: BuildUi, modifier: Modifier = Modifier) {
         SimpleDateFormat("dd MMM · HH:mm", Locale.getDefault()).format(Date(build.uploadDate))
     }
 
-    VolcanicCard(modifier = modifier, cornerRadius = 18.dp) {
+    LedgerCard(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 72.dp)
+                .heightIn(min = 56.dp)
                 .semantics {
                     role = Role.Button
                     contentDescription = if (expanded) {

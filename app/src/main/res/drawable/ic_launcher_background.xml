@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Volcanic Split: базальтовый грунт и teal-половина с одной внутренней дугой.
-  Геометрия в системе 108×108: видимая область адаптивной иконки — центральные
-  72×72 (18..90), поэтому шов и радиус заданы там, а поля дозаливаются прямыми.
+  «Чистый»: сплошной графитовый фон из новой визуальной системы приложения.
+  Форму адаптивной иконки задаёт лаунчер устройства.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -10,9 +9,6 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#080A0A"
+        android:fillColor="#2B2A28"
         android:pathData="M0,0 L108,0 L108,108 L0,108 Z" />
-    <path
-        android:fillColor="#063F47"
-        android:pathData="M75.6,0 L108,0 L108,108 L75.6,108 L75.6,90 C63.67,90 54,80.33 54,68.4 L54,39.6 C54,27.67 63.67,18 75.6,18 Z" />
 </vector>

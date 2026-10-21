@@ -22,16 +22,14 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.appdist.core.ui.theme.AppTheme
 import com.appdist.feature.browse.ui.builds.BuildFilters
 
 val STANDS = listOf("dev3", "l10", "prod", "stage")
 val BUILD_TYPES = listOf("предрелиз", "приемочное")
 
-/**
- * Фильтры канала и стенда. Выбранный уходит на ink-поверхность — тот же
- * контраст, что и у основного действия, поэтому состояние читается без цвета.
- */
+/** Компактные фильтры журнала сборок. */
 @Composable
 fun FilterChipsRow(
     filters: BuildFilters,
@@ -43,10 +41,10 @@ fun FilterChipsRow(
 
     Row(
         modifier = modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         FilterPill(
-            label = "все",
+            label = "Все",
             selected = noFilters,
             onClick = {
                 onEnvironmentSelected(null)
@@ -72,25 +70,35 @@ fun FilterChipsRow(
 
 @Composable
 private fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(6.dp)
     Box(
         modifier = Modifier
-            .height(48.dp)
-            .widthIn(min = 61.dp)
-            .background(if (selected) AppTheme.colors.actionTile else AppTheme.colors.chip, shape)
-            .border(1.dp, AppTheme.colors.panelStroke, shape)
+            .height(32.dp)
+            .widthIn(min = 32.dp)
+            .background(
+                if (selected) AppTheme.colors.statusLatestContainer else AppTheme.colors.chip,
+                shape,
+            )
+            .border(
+                1.dp,
+                if (selected) AppTheme.colors.panelStrokeStrong else AppTheme.colors.panelStroke,
+                shape,
+            )
             .semantics {
                 role = Role.Tab
                 this.selected = selected
             }
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp),
+            .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (selected) AppTheme.colors.onActionTile else AppTheme.colors.ink,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 11.sp,
+                lineHeight = 14.sp,
+            ),
+            color = if (selected) AppTheme.colors.statusLatest else AppTheme.colors.ink,
         )
     }
 }

@@ -26,10 +26,10 @@ class UserPreferencesStoreThemeTest {
     }
 
     @Test
-    fun `themeMode отдаёт DARK, когда ничего не сохранено`() = runTest {
+    fun `themeMode отдаёт LIGHT, когда ничего не сохранено`() = runTest {
         every { dataStore.data } returns flowOf(mutablePreferencesOf())
         store.themeMode.test {
-            assertEquals(ThemeMode.DARK, awaitItem())
+            assertEquals(ThemeMode.LIGHT, awaitItem())
             awaitComplete()
         }
     }
@@ -55,11 +55,11 @@ class UserPreferencesStoreThemeTest {
     }
 
     @Test
-    fun `themeMode откатывается к DARK при неизвестном значении`() = runTest {
+    fun `themeMode откатывается к LIGHT при неизвестном значении`() = runTest {
         val prefs = mutablePreferencesOf(stringPreferencesKey("theme_mode") to "SEPIA")
         every { dataStore.data } returns flowOf(prefs)
         store.themeMode.test {
-            assertEquals(ThemeMode.DARK, awaitItem())
+            assertEquals(ThemeMode.LIGHT, awaitItem())
             awaitComplete()
         }
     }

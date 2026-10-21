@@ -10,7 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.appdist.core.ui.components.VolcanicCard
+import com.appdist.core.ui.components.LedgerCard
+import com.appdist.core.ui.components.LedgerSectionLabel
 import com.appdist.core.ui.theme.AppTheme
 import com.appdist.core.ui.theme.MonoMeta
 import java.text.SimpleDateFormat
@@ -34,12 +35,12 @@ fun ChangelogSection(
     }
 
     Column(modifier) {
-        Text("Что нового", style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(14.dp))
-        VolcanicCard(cornerRadius = 20.dp) {
+        LedgerCard(highlighted = true) {
             Column(Modifier.padding(16.dp)) {
-                Text(changelog, style = MaterialTheme.typography.bodyLarge)
-                Spacer(Modifier.height(12.dp))
+                LedgerSectionLabel("Что нового")
+                Spacer(Modifier.height(14.dp))
+                Text(changelog, style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(18.dp))
                 Text(meta, style = MonoMeta, color = AppTheme.colors.muted)
             }
         }

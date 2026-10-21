@@ -7,6 +7,7 @@ import com.appdist.core.common.Result
 import com.appdist.core.database.dao.BuildDao
 import com.appdist.core.database.entity.BuildEntity
 import com.appdist.core.network.dto.ProjectResponse
+import com.appdist.feature.browse.domain.BuildRepository
 import com.appdist.feature.browse.domain.GetProjectsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -17,6 +18,8 @@ import javax.inject.Inject
 data class ProjectsUiState(
     val projects: List<ProjectResponse> = emptyList(),
     val latestBuilds: Map<String, BuildEntity> = emptyMap(),
+    val isLatestBuildsLoading: Boolean = false,
+    val latestBuildsError: AppError? = null,
     val isLoading: Boolean = true,
     val error: AppError? = null,
 )
@@ -24,6 +27,7 @@ data class ProjectsUiState(
 @HiltViewModel
 class ProjectsViewModel @Inject constructor(
     private val getProjects: GetProjectsUseCase,
+    private val buildRepository: BuildRepository,
     buildDao: BuildDao,
 ) : ViewModel() {
 
@@ -54,10 +58,32 @@ class ProjectsViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true, error = null) }
             when (val result = getProjects.refresh()) {
                 is Result.Success -> _state.update {
-                    it.copy(projects = result.data, isLoading = false, error = null)
+                    it.copy(
+                        projects = result.data,
+                        isLoading = false,
+                        error = null,
+                        isLatestBuildsLoading = result.data.isNotEmpty(),
+                        latestBuildsError = null,
+                    )
                 }
                 is Result.Error -> _state.update {
-                    it.copy(isLoading = false, error = result.error)
+                    it.copy(
+                        isLoading = false,
+                        isLatestBuildsLoading = false,
+                        error = result.error,
+                    )
+                }
+            }
+
+            val projectIds = (_state.value.projects).map { it.id }
+            if (projectIds.isNotEmpty() && _state.value.error == null) {
+                when (val result = buildRepository.refreshLatestBuilds(projectIds)) {
+                    is Result.Success -> _state.update {
+                        it.copy(isLatestBuildsLoading = false, latestBuildsError = null)
+                    }
+                    is Result.Error -> _state.update {
+                        it.copy(isLatestBuildsLoading = false, latestBuildsError = result.error)
+                    }
                 }
             }
         }

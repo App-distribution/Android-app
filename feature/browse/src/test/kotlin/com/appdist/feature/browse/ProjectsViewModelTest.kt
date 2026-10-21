@@ -6,6 +6,7 @@ import com.appdist.core.common.Result
 import com.appdist.core.database.dao.BuildDao
 import com.appdist.core.network.dto.ProjectResponse
 import com.appdist.feature.browse.domain.GetProjectsUseCase
+import com.appdist.feature.browse.domain.BuildRepository
 import com.appdist.feature.browse.domain.ProjectRepository
 import com.appdist.feature.browse.ui.projects.ProjectsViewModel
 import io.mockk.coEvery
@@ -32,6 +33,7 @@ class ProjectsViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var repository: ProjectRepository
     private lateinit var buildDao: BuildDao
+    private lateinit var buildRepository: BuildRepository
     private val projects = MutableStateFlow<List<ProjectResponse>>(emptyList())
 
     @BeforeEach
@@ -39,8 +41,10 @@ class ProjectsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = mockk()
         buildDao = mockk()
+        buildRepository = mockk()
         every { repository.getProjects() } returns projects
         every { buildDao.getLatestBuildPerProject() } returns MutableStateFlow(emptyList())
+        coEvery { buildRepository.refreshLatestBuilds(any()) } returns Result.Success(Unit)
     }
 
     @AfterEach
@@ -54,7 +58,7 @@ class ProjectsViewModelTest {
             AppError.Network(503, "Unavailable")
         )
 
-        val viewModel = ProjectsViewModel(GetProjectsUseCase(repository), buildDao)
+        val viewModel = ProjectsViewModel(GetProjectsUseCase(repository), buildRepository, buildDao)
 
         viewModel.state.test {
             val state = awaitItem()
@@ -78,7 +82,7 @@ class ProjectsViewModelTest {
             Result.Success(listOf(project)),
         )
 
-        val viewModel = ProjectsViewModel(GetProjectsUseCase(repository), buildDao)
+        val viewModel = ProjectsViewModel(GetProjectsUseCase(repository), buildRepository, buildDao)
         viewModel.retry()
 
         viewModel.state.test {
@@ -89,5 +93,30 @@ class ProjectsViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
         coVerify(exactly = 2) { repository.refresh() }
+        coVerify(exactly = 1) { buildRepository.refreshLatestBuilds(listOf("project-1")) }
+    }
+
+    @Test
+    fun `latest build refresh failure remains distinguishable from an empty project`() = runTest {
+        val project = ProjectResponse(
+            id = "project-1",
+            workspaceId = "workspace-1",
+            name = "Mobile App",
+            packageName = "com.example.mobile",
+            createdAt = 0L,
+        )
+        coEvery { repository.refresh() } returns Result.Success(listOf(project))
+        coEvery { buildRepository.refreshLatestBuilds(any()) } returns Result.Error(
+            AppError.Network(503, "Unavailable"),
+        )
+
+        val viewModel = ProjectsViewModel(GetProjectsUseCase(repository), buildRepository, buildDao)
+
+        viewModel.state.test {
+            val state = awaitItem()
+            assertFalse(state.isLatestBuildsLoading)
+            assertEquals(503, (state.latestBuildsError as AppError.Network).code)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }
