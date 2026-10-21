@@ -15,7 +15,8 @@ internal fun BuildResponse.toUi() = BuildUi(
     minSdk = minSdk, targetSdk = targetSdk, certFingerprint = certFingerprint,
     abis = abis ?: emptyList(), expiryDate = expiryDate,
     branch = branch, commitHash = commitHash,
-    installStatus = InstallStatus.NotInstalled
+    installStatus = InstallStatus.NotInstalled,
+    flavor = flavor, stand = stand,
 )
 
 internal fun BuildResponse.toEntity(cachedAt: Long = System.currentTimeMillis()) = BuildEntity(

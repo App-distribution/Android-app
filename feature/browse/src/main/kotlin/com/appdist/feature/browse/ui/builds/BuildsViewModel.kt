@@ -13,6 +13,7 @@ import com.appdist.core.common.model.InstallStatus
 import com.appdist.core.common.toAppError
 import com.appdist.core.downloads.DownloadRepository
 import com.appdist.core.downloads.DownloadState
+import com.appdist.feature.browse.domain.BuildFilterOptions
 import com.appdist.feature.browse.domain.BuildRepository
 import com.appdist.feature.browse.domain.GetBuildsUseCase
 import com.appdist.feature.builddetail.domain.GetInstallStatusUseCase
@@ -72,8 +73,21 @@ class BuildsViewModel @Inject constructor(
     private var downloadObservation: Job? = null
     private var autoInstallRequested = false
 
-    fun setChannel(channel: String?) = _filters.update { it.copy(channel = channel) }
-    fun setEnvironment(env: String?) = _filters.update { it.copy(environment = env) }
+    /**
+     * Чипы фильтров строятся из значений, реально встречающихся у сборок
+     * проекта. Не загрузились — рядов просто нет, журнал работает без них.
+     */
+    private val _filterOptions = MutableStateFlow(BuildFilterOptions())
+    val filterOptions: StateFlow<BuildFilterOptions> = _filterOptions.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            buildRepository.getFilterOptions(projectId).getOrNull()?.let { _filterOptions.value = it }
+        }
+    }
+
+    fun setFlavor(flavor: String?) = _filters.update { it.copy(flavor = flavor) }
+    fun setStand(stand: String?) = _filters.update { it.copy(stand = stand) }
     fun setSearch(query: String) = _filters.update { it.copy(searchQuery = query) }
     fun clearFilters() = _filters.update { BuildFilters() }
 

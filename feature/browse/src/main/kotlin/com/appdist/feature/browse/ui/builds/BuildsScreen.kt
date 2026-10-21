@@ -89,6 +89,7 @@ fun BuildsScreen(
     viewModel: BuildsViewModel = hiltViewModel(),
 ) {
     val filters by viewModel.filters.collectAsStateWithLifecycle()
+    val filterOptions by viewModel.filterOptions.collectAsStateWithLifecycle()
     val latestInstallState by viewModel.latestInstallState.collectAsStateWithLifecycle()
     val builds = viewModel.builds.collectAsLazyPagingItems()
     var searchText by remember { mutableStateOf("") }
@@ -152,8 +153,9 @@ fun BuildsScreen(
                 Spacer(Modifier.height(10.dp))
                 FilterChipsRow(
                     filters = filters,
-                    onChannelSelected = viewModel::setChannel,
-                    onEnvironmentSelected = viewModel::setEnvironment,
+                    options = filterOptions,
+                    onFlavorSelected = viewModel::setFlavor,
+                    onStandSelected = viewModel::setStand,
                 )
             }
 
@@ -277,7 +279,7 @@ private fun LatestBuildCard(
                 modifier = Modifier.offset(x = 18.dp, y = 18.dp),
             )
             BuildEnvironmentBadge(
-                label = build.environment.ifBlank { "QA" },
+                label = build.tagLabel.ifBlank { "QA" },
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .offset(x = (-18).dp, y = 14.dp),

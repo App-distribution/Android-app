@@ -30,12 +30,15 @@ interface ApiService {
     @GET("api/v1/public/projects/{projectId}/builds")
     suspend fun getBuilds(
         @Path("projectId") projectId: String,
-        @Query("channel") channel: String? = null,
-        @Query("env") env: String? = null,
+        @Query("flavor") flavor: String? = null,
+        @Query("stand") stand: String? = null,
         @Query("search") search: String? = null,
         @Query("page") page: Int = 0,
         @Query("limit") limit: Int = 20
     ): Response<List<BuildResponse>>
+
+    @GET("api/v1/public/projects/{projectId}/build-filters")
+    suspend fun getBuildFilters(@Path("projectId") projectId: String): Response<BuildFiltersResponse>
 
     @GET("api/v1/public/builds/{id}")
     suspend fun getBuild(@Path("id") id: String): Response<BuildResponse>

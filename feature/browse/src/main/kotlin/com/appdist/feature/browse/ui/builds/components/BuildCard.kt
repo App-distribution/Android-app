@@ -99,7 +99,7 @@ fun rememberUploadDate(uploadDate: Long, pattern: String = "d MMM yyyy"): String
 }
 
 private fun BuildUi.compactHistoryMeta(date: String): String {
-    return listOf(environment.lowercase(), channel.uppercase(), date)
+    return listOf(tagLabel, date)
         .filter { it.isNotBlank() }
         .joinToString("  •  ")
 }

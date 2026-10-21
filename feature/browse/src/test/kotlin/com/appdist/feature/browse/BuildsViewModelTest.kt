@@ -8,6 +8,7 @@ import com.appdist.core.common.model.BuildUi
 import com.appdist.core.common.model.InstallStatus
 import com.appdist.core.downloads.DownloadRepository
 import com.appdist.core.downloads.DownloadState
+import com.appdist.feature.browse.domain.BuildFilterOptions
 import com.appdist.feature.browse.domain.BuildRepository
 import com.appdist.feature.browse.domain.GetBuildsUseCase
 import com.appdist.feature.browse.ui.builds.BuildFilters
@@ -43,6 +44,8 @@ class BuildsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = mockk()
         every { repository.getBuilds(any(), any()) } returns flowOf(PagingData.empty())
+        coEvery { repository.getFilterOptions(any()) } returns
+            Result.Success(BuildFilterOptions(flavors = listOf("stage", "prod"), stands = listOf("l10")))
         getInstallStatus = mockk()
         startDownload = mockk(relaxed = true)
         downloadRepository = mockk(relaxed = true)
@@ -69,27 +72,41 @@ class BuildsViewModelTest {
     fun `initial filters are empty`() = runTest {
         viewModel.filters.test {
             val filters = awaitItem()
-            assertNull(filters.channel)
-            assertNull(filters.environment)
+            assertNull(filters.flavor)
+            assertNull(filters.stand)
             assertEquals("", filters.searchQuery)
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `setChannel updates filter`() = runTest {
+    fun `flavor and stand combine`() = runTest {
         viewModel.filters.test {
             awaitItem() // initial
-            viewModel.setChannel("alpha")
-            assertEquals("alpha", awaitItem().channel)
+            viewModel.setFlavor("stage")
+            assertEquals("stage", awaitItem().flavor)
+            viewModel.setStand("l10")
+            val filters = awaitItem()
+            assertEquals("stage" to "l10", filters.flavor to filters.stand)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `filter chips come from the project's real values`() = runTest {
+        viewModel.filterOptions.test {
+            assertEquals(
+                BuildFilterOptions(flavors = listOf("stage", "prod"), stands = listOf("l10")),
+                expectMostRecentItem(),
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `clearFilters resets to defaults`() = runTest {
-        viewModel.setChannel("beta")
-        viewModel.setEnvironment("qa")
+        viewModel.setFlavor("stage")
+        viewModel.setStand("l10")
         viewModel.clearFilters()
         viewModel.filters.test {
             val filters = awaitItem()

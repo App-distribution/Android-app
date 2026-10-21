@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,45 +25,44 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.appdist.core.ui.theme.AppTheme
+import com.appdist.feature.browse.domain.BuildFilterOptions
 import com.appdist.feature.browse.ui.builds.BuildFilters
 
-val STANDS = listOf("dev3", "l10", "prod", "stage")
-val BUILD_TYPES = listOf("предрелиз", "приемочное")
-
-/** Компактные фильтры журнала сборок. */
+/**
+ * Быстрые фильтры журнала: ряд видов сборки и ряд стендов. Значения приходят
+ * с сервера — это то, что реально есть у сборок проекта, — поэтому новый
+ * стенд появится здесь сам. Ряд с одним значением бесполезен и не показывается.
+ */
 @Composable
 fun FilterChipsRow(
     filters: BuildFilters,
-    onChannelSelected: (String?) -> Unit,
-    onEnvironmentSelected: (String?) -> Unit,
+    options: BuildFilterOptions,
+    onFlavorSelected: (String?) -> Unit,
+    onStandSelected: (String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val noFilters = filters.environment == null && filters.channel == null
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (options.flavors.size > 1) {
+            ChipGroup(values = options.flavors, selected = filters.flavor, onSelected = onFlavorSelected)
+        }
+        if (options.stands.size > 1) {
+            ChipGroup(values = options.stands, selected = filters.stand, onSelected = onStandSelected)
+        }
+    }
+}
 
+@Composable
+private fun ChipGroup(values: List<String>, selected: String?, onSelected: (String?) -> Unit) {
     Row(
-        modifier = modifier.horizontalScroll(rememberScrollState()),
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        FilterPill(
-            label = "Все",
-            selected = noFilters,
-            onClick = {
-                onEnvironmentSelected(null)
-                onChannelSelected(null)
-            },
-        )
-        STANDS.forEach { stand ->
+        FilterPill(label = "Все", selected = selected == null, onClick = { onSelected(null) })
+        values.forEach { value ->
             FilterPill(
-                label = stand,
-                selected = filters.environment == stand,
-                onClick = { onEnvironmentSelected(if (filters.environment == stand) null else stand) },
-            )
-        }
-        BUILD_TYPES.forEach { type ->
-            FilterPill(
-                label = type,
-                selected = filters.channel == type,
-                onClick = { onChannelSelected(if (filters.channel == type) null else type) },
+                label = value,
+                selected = selected == value,
+                onClick = { onSelected(if (selected == value) null else value) },
             )
         }
     }

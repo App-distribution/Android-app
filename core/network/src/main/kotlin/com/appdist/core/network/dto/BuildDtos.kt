@@ -11,6 +11,7 @@ data class BuildResponse(
     @SerialName("version_code") val versionCode: Long,
     @SerialName("build_number") val buildNumber: String? = null,
     @SerialName("flavor") val flavor: String? = null,
+    @SerialName("stand") val stand: String? = null,
     @SerialName("build_type") val buildType: String,
     @SerialName("environment") val environment: String,
     @SerialName("channel") val channel: String,
@@ -41,4 +42,11 @@ data class InstallEventRequest(
     @SerialName("device_model") val deviceModel: String,
     @SerialName("android_version") val androidVersion: String,
     @SerialName("sdk_version") val sdkVersion: Int
+)
+
+/** Виды и стенды, встречающиеся у сборок проекта, — значения быстрых фильтров. */
+@Serializable
+data class BuildFiltersResponse(
+    @SerialName("flavors") val flavors: List<String> = emptyList(),
+    @SerialName("stands") val stands: List<String> = emptyList(),
 )

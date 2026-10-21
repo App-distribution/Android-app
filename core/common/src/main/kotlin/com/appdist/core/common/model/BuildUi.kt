@@ -24,8 +24,19 @@ data class BuildUi(
     val expiryDate: Long?,
     val branch: String?,
     val commitHash: String?,
-    val installStatus: InstallStatus = InstallStatus.NotInstalled
-)
+    val installStatus: InstallStatus = InstallStatus.NotInstalled,
+    /** Вид сборки: prod, stage, dev, stage-rustore… */
+    val flavor: String? = null,
+    /** Стенд, на который смотрит сборка: l10, dev3, prod… У старых сборок — null. */
+    val stand: String? = null,
+) {
+    /**
+     * Короткая подпись «вид · стенд». У старых сборок, загруженных до
+     * появления стенда, — прежнее окружение.
+     */
+    val tagLabel: String
+        get() = listOfNotNull(flavor, stand).joinToString(" · ").ifBlank { environment.lowercase() }
+}
 
 sealed interface InstallStatus {
     data object NotInstalled : InstallStatus

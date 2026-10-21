@@ -26,8 +26,8 @@ class BuildsPagingSource(
         return try {
             val response = api.getBuilds(
                 projectId = projectId,
-                channel = filters.channel,
-                env = filters.environment,
+                flavor = filters.flavor,
+                stand = filters.stand,
                 search = filters.searchQuery.takeIf { it.isNotBlank() },
                 page = page,
                 limit = params.loadSize

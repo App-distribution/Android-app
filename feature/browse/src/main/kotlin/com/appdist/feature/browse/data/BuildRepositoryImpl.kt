@@ -10,6 +10,7 @@ import com.appdist.core.common.toAppError
 import com.appdist.core.database.dao.BuildDao
 import com.appdist.core.network.ApiService
 import com.appdist.core.network.dto.BuildResponse
+import com.appdist.feature.browse.domain.BuildFilterOptions
 import com.appdist.feature.browse.domain.BuildRepository
 import com.appdist.feature.browse.ui.builds.BuildFilters
 import kotlinx.coroutines.async
@@ -78,6 +79,18 @@ class BuildRepositoryImpl @Inject constructor(
         } else Result.Error(AppError.Network(response.code(), response.message()))
     } catch (e: Exception) {
         Result.Error(AppError.Unknown(e.message ?: "Unknown error"))
+    }
+
+    override suspend fun getFilterOptions(projectId: String): Result<BuildFilterOptions> = try {
+        val response = api.getBuildFilters(projectId)
+        val body = response.body()
+        if (response.isSuccessful && body != null) {
+            Result.Success(BuildFilterOptions(flavors = body.flavors, stands = body.stands))
+        } else {
+            Result.Error(AppError.Network(response.code(), response.message()))
+        }
+    } catch (e: Exception) {
+        Result.Error(e.toAppError())
     }
 
 }
