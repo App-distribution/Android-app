@@ -376,7 +376,7 @@ private fun LatestBuildInstallAction(
                     .background(AppTheme.colors.progress),
             )
             Text(
-                "Загрузка · ${(progress * 100).toInt()}%",
+                (if (downloading.waiting) "Ожидание сети · " else "Загрузка · ") + "${(progress * 100).toInt()}%",
                 style = MaterialTheme.typography.labelLarge,
                 color = AppTheme.colors.ink,
             )

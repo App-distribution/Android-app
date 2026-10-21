@@ -90,6 +90,7 @@ class DownloadRepository @Inject constructor(
         val path = downloadDao.getByBuildId(buildId)?.localPath
         if (path != null) File(path).delete()
         DownloadPaths.apkFile(context, buildId).delete()
+        DownloadPaths.partFile(context, buildId).delete()
         downloadDao.delete(buildId)
     }
 
@@ -110,8 +111,14 @@ class DownloadRepository @Inject constructor(
                 bytesLoaded = info.progress.getLong(DownloadWorkKeys.KEY_BYTES_LOADED, entity?.bytesLoaded ?: 0L)
             )
 
+            // Между попытками работа снова ENQUEUED: показываем, сколько уже
+            // скачано, а не откатываем прогресс к нулю.
             info?.state == WorkInfo.State.ENQUEUED || info?.state == WorkInfo.State.BLOCKED ->
-                DownloadState.Downloading(0f, 0L)
+                DownloadState.Downloading(
+                    progress = entity?.progress ?: 0f,
+                    bytesLoaded = entity?.bytesLoaded ?: 0L,
+                    waiting = info.runAttemptCount > 0 || (entity?.bytesLoaded ?: 0L) > 0L,
+                )
 
             readyFile != null -> DownloadState.ReadyToInstall(readyFile.absolutePath)
 

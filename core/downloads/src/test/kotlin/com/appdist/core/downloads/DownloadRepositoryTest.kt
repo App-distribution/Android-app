@@ -76,6 +76,34 @@ class DownloadRepositoryTest {
         }
     }
 
+    // Между попытками работа снова ENQUEUED. Раньше прогресс в этот момент
+    // падал к нулю, и казалось, что загрузка началась заново.
+    @Test
+    fun `work waiting for retry keeps progress and is marked waiting`() = runTest {
+        every { workManager.getWorkInfosForUniqueWorkFlow("download_b1") } returns
+            flowOf(listOf(workInfo(WorkInfo.State.ENQUEUED, Data.EMPTY)))
+        every { dao.observeByBuildId("b1") } returns flowOf(
+            entity("b1", DownloadWorkKeys.STATE_DOWNLOADING, localPath = null)
+                .copy(progress = 0.4f, bytesLoaded = 40L)
+        )
+
+        repository.observeDownload("b1").test {
+            assertEquals(DownloadState.Downloading(0.4f, 40L, waiting = true), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `cancel removes the partially downloaded file`() = runTest {
+        val part = File(cacheDir, "${DownloadPaths.DIR_NAME}/b1.apk.part").apply {
+            parentFile?.mkdirs(); writeBytes(ByteArray(10))
+        }
+
+        repository.cancel("b1")
+
+        assertTrue(!part.exists())
+    }
+
     @Test
     fun `existing file with no work maps to ReadyToInstall`() = runTest {
         val apk = File(cacheDir, "apk_downloads/b1.apk").also {

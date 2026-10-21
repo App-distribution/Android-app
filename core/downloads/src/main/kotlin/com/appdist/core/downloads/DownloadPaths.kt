@@ -16,4 +16,7 @@ object DownloadPaths {
     fun downloadsDir(context: Context): File = File(context.cacheDir, DIR_NAME)
 
     fun apkFile(context: Context, buildId: String): File = File(downloadsDir(context), "$buildId.apk")
+
+    /** Недокачанный файл: переживает обрывы и перезапуски, чтобы докачка шла с того же байта. */
+    fun partFile(context: Context, buildId: String): File = File(downloadsDir(context), "$buildId.apk.part")
 }

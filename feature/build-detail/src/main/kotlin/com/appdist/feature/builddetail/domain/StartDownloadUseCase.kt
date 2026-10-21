@@ -3,6 +3,8 @@ package com.appdist.feature.builddetail.domain
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.BackoffPolicy
+import java.util.concurrent.TimeUnit
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -36,6 +38,9 @@ class StartDownloadUseCase @Inject constructor(
                 )
             )
             .setConstraints(Constraints(NetworkType.CONNECTED))
+            // Повторы не ограничены: обрыв — не повод бросать загрузку.
+            // Пауза растёт с 10 с, WorkManager сам ограничивает её сверху.
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.SECONDS)
             .build()
 
         workManager.enqueueUniqueWork(
